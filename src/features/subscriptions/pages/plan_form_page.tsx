@@ -9,7 +9,7 @@ import { ErrorState } from '../../../core/ui/components/error_state'
 import { useGetPlanQuery, useCreatePlanMutation, useUpdatePlanMutation, useGetPlanMetadataQuery } from '../api/subscriptions_api'
 import type { PlanType, BillingPeriod } from '../api/subscriptions_types'
 
-const schema = z.object({
+const baseSchema = z.object({
   name: z.string().min(2, 'Name is required'),
   description: z.string().optional(),
   planType: z.string().min(1, 'Plan type is required'),
@@ -23,7 +23,11 @@ const schema = z.object({
   // Common fields
   maxLocations: z.coerce.number().min(1, 'Must be at least 1'),
   maxFacilitiesPerLocation: z.coerce.number().min(1, 'Must be at least 1'),
-}).refine((data) => {
+})
+
+type FormData = z.infer<typeof baseSchema>
+
+const schema = baseSchema.refine((data) => {
   if (data.planType === 'PERIOD_BASED') {
     return data.billingPeriod && data.periodPrice !== undefined && data.periodPrice > 0
   }
@@ -35,8 +39,6 @@ const schema = z.object({
   }
   return true
 }, { message: 'Commission percentage is required for commission-based plans', path: ['commissionPercentage'] })
-
-type FormData = z.infer<typeof schema>
 
 export default function PlanFormPage() {
   const navigate = useNavigate()
@@ -57,7 +59,8 @@ export default function PlanFormPage() {
   const defaultBillingPeriod = metadata?.billingPeriods?.[0]?.value ?? 'MONTHLY'
 
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(schema) as any,
     values: existing ? {
       name: existing.name,
       description: existing.description ?? '',

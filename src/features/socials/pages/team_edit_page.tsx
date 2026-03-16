@@ -14,7 +14,7 @@ import { useGetTeamQuery, useUpdateTeamMutation } from '../api/socials_api'
 
 const schema = z.object({
   name: z.string().min(2, 'Team name is required'),
-  sportId: z.number({ required_error: 'Sport is required' }).min(1, 'Sport is required'),
+  sportId: z.number().min(1, 'Sport is required'),
   description: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
@@ -75,7 +75,7 @@ export default function TeamEditPage() {
       setAvatarPreview(team.imageUrl)
       // Load team members
       if (team.members && team.members.length > 0) {
-        const loadedMembers = team.members.map(m => ({
+        const loadedMembers = team.members.map((m: { userId: number; userName: string | null; userPhone: string | null; role: string }) => ({
           id: m.userId,
           name: m.userName ?? 'Unknown',
           phone: m.userPhone ?? '',

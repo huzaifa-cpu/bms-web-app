@@ -17,7 +17,7 @@ const PAKISTAN_CITIES = [
 ]
 
 const schema = z.object({
-  providerUserId: z.number({ required_error: 'Provider is required' }).min(1, 'Provider is required'),
+  providerUserId: z.number().min(1, 'Provider is required'),
   name: z.string().min(1, 'Name is required'),
   addressLine1: z.string().min(1, 'Address is required'),
   city: z.string().min(1, 'City is required'),

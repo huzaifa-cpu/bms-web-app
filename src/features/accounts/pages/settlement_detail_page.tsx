@@ -35,7 +35,6 @@ export default function SettlementDetailPage() {
 
   const settlement = data?.data
   const items = itemsData?.data ?? settlement?.items ?? []
-  const isMutating = isApproving || isMarkingPaid || isMarkingFailed
 
   const handleConfirm = async () => {
     if (!settlement) return

@@ -5,7 +5,6 @@ import { BsSearch, BsEye, BsPencil, BsToggleOn, BsToggleOff } from 'react-icons/
 import { toast } from 'react-toastify'
 import { EmptyState } from '../../../core/ui/components/empty_state'
 import { Pagination } from '../../../core/ui/components/pagination'
-import { StatusBadge } from '../../../core/ui/components/status_badge'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
 import { useListProvidersQuery, useToggleProviderStatusMutation } from '../api/providers_api'

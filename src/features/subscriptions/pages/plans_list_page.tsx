@@ -1,3 +1,4 @@
+import React from 'react'
 import { Card, Table, Button, Badge } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsPlusCircle, BsPencil, BsToggleOn, BsToggleOff } from 'react-icons/bs'
@@ -20,7 +21,7 @@ const formatPricing = (plan: PlanConfigDto): string => {
   return '-'
 }
 
-const formatPlanType = (planType: string): JSX.Element => {
+const formatPlanType = (planType: string): React.ReactElement => {
   if (planType === 'PERIOD_BASED') {
     return <Badge bg="info">Period Based</Badge>
   } else if (planType === 'COMMISSION_BASED') {

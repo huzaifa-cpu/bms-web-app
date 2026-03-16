@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Card, Table, Button, Badge, Modal, Form } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-import { BsEye, BsCheckCircle, BsXCircle } from 'react-icons/bs'
+import { BsEye } from 'react-icons/bs'
 import { toast } from 'react-toastify'
 import { EmptyState } from '../../../core/ui/components/empty_state'
 import { Loader } from '../../../core/ui/components/loader'
@@ -21,32 +21,17 @@ export default function ApprovalsFacilitiesPage() {
     size: pageSize,
   })
 
-  const [approveFacility, { isLoading: isApproving }] = useApproveFacilityMutation()
+  const [_approveFacility, { isLoading: _isApproving }] = useApproveFacilityMutation()
   const [rejectFacility, { isLoading: isRejecting }] = useRejectFacilityMutation()
 
   const [showRejectModal, setShowRejectModal] = useState(false)
-  const [selectedFacilityId, setSelectedFacilityId] = useState<number | null>(null)
+  const [selectedFacilityId, _setSelectedFacilityId] = useState<number | null>(null)
   const [rejectNotes, setRejectNotes] = useState('')
 
   const springPage = data?.data
   const facilities = springPage?.content ?? []
   const totalItems = springPage?.totalElements ?? 0
   const totalPages = springPage?.totalPages ?? 0
-
-  const handleApprove = async (facilityId: number) => {
-    try {
-      await approveFacility({ facilityId }).unwrap()
-      toast.success('Facility approved successfully.')
-    } catch {
-      toast.error('Failed to approve facility.')
-    }
-  }
-
-  const handleRejectClick = (facilityId: number) => {
-    setSelectedFacilityId(facilityId)
-    setRejectNotes('')
-    setShowRejectModal(true)
-  }
 
   const handleRejectConfirm = async () => {
     if (!selectedFacilityId) return

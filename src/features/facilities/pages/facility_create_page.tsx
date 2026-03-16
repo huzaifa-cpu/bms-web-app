@@ -22,9 +22,9 @@ const scheduleSchema = z.object({
 })
 
 const schema = z.object({
-  providerUserId: z.number({ required_error: 'Provider is required' }).min(1, 'Provider is required'),
-  venueId: z.number({ required_error: 'Location is required' }).min(1, 'Location is required'),
-  sportId: z.number({ required_error: 'Sport is required' }).min(1, 'Sport is required'),
+  providerUserId: z.number().min(1, 'Provider is required'),
+  venueId: z.number().min(1, 'Location is required'),
+  sportId: z.number().min(1, 'Sport is required'),
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   schedules: z.array(scheduleSchema),

@@ -18,7 +18,7 @@ const schema = z.object({
   email: z.string().email('Invalid email'),
   mobileNumber: z.string().min(1, 'Phone is required'),
   jobTitle: z.string().min(1, 'Job title is required'),
-  providerId: z.number({ required_error: 'Provider is required' }).min(1, 'Provider is required'),
+  providerId: z.number().min(1, 'Provider is required'),
   locationId: z.number().nullable().optional(),
   facilityId: z.number().nullable().optional(),
 })

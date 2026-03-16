@@ -310,7 +310,7 @@ export default function DisputeCreatePage() {
                             >
                               <div className="fw-medium">{f.name}</div>
                               <small style={{ color: selectedFacilityId === f.id ? 'rgba(255,255,255,0.8)' : 'var(--color-text-secondary)' }}>
-                                {f.sportType ?? 'N/A'}
+                                {f.sportName ?? 'N/A'}
                               </small>
                             </div>
                           ))

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Card, Table, Button, Badge, Modal, Form } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-import { BsEye, BsCheckCircle, BsXCircle } from 'react-icons/bs'
+import { BsEye } from 'react-icons/bs'
 import { toast } from 'react-toastify'
 import { EmptyState } from '../../../core/ui/components/empty_state'
 import { Loader } from '../../../core/ui/components/loader'
@@ -21,32 +21,17 @@ export default function ApprovalsProvidersPage() {
     size: pageSize,
   })
 
-  const [approveProvider, { isLoading: isApproving }] = useApproveProviderMutation()
+  const [_approveProvider, { isLoading: _isApproving }] = useApproveProviderMutation()
   const [rejectProvider, { isLoading: isRejecting }] = useRejectProviderMutation()
 
   const [showRejectModal, setShowRejectModal] = useState(false)
-  const [selectedProviderId, setSelectedProviderId] = useState<number | null>(null)
+  const [selectedProviderId, _setSelectedProviderId] = useState<number | null>(null)
   const [rejectNotes, setRejectNotes] = useState('')
 
   const springPage = data?.data
   const providers = springPage?.content ?? []
   const totalItems = springPage?.totalElements ?? 0
   const totalPages = springPage?.totalPages ?? 0
-
-  const handleApprove = async (providerId: number) => {
-    try {
-      await approveProvider({ providerId }).unwrap()
-      toast.success('Provider approved successfully.')
-    } catch {
-      toast.error('Failed to approve provider.')
-    }
-  }
-
-  const handleRejectClick = (providerId: number) => {
-    setSelectedProviderId(providerId)
-    setRejectNotes('')
-    setShowRejectModal(true)
-  }
 
   const handleRejectConfirm = async () => {
     if (!selectedProviderId) return

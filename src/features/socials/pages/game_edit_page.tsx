@@ -15,10 +15,10 @@ import { useListGameFormatsQuery, useGetGameQuery, useUpdateGameMutation } from 
 
 const schema = z.object({
   title: z.string().min(2, 'Title is required'),
-  organizerUserId: z.number({ required_error: 'Organizer is required' }).min(1, 'Organizer is required'),
-  sportId: z.number({ required_error: 'Sport is required' }).min(1, 'Sport is required'),
+  organizerUserId: z.number().min(1, 'Organizer is required'),
+  sportId: z.number().min(1, 'Sport is required'),
   gameFormat: z.string().min(1, 'Game format is required'),
-  venueId: z.number({ required_error: 'Location is required' }).min(1, 'Location is required'),
+  venueId: z.number().min(1, 'Location is required'),
   gameDate: z.string().min(1, 'Date is required').refine((date) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)

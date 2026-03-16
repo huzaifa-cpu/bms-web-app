@@ -23,7 +23,7 @@ const schema = z.object({
     .refine((val) => /^03\d{9}$/.test(val), {
       message: 'Mobile number must start with 03 and be 11 digits',
     }),
-  roleId: z.number({ required_error: 'Role is required' }).min(1, 'Role is required'),
+  roleId: z.number().min(1, 'Role is required'),
 })
 type FormData = z.infer<typeof schema>
 

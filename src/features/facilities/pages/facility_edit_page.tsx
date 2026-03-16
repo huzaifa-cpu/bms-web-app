@@ -24,9 +24,9 @@ const scheduleSchema = z.object({
 })
 
 const schema = z.object({
-  providerUserId: z.number({ required_error: 'Provider is required' }).min(1, 'Provider is required'),
-  venueId: z.number({ required_error: 'Location is required' }).min(1, 'Location is required'),
-  sportId: z.number({ required_error: 'Sport is required' }).min(1, 'Sport is required'),
+  providerUserId: z.number().min(1, 'Provider is required'),
+  venueId: z.number().min(1, 'Location is required'),
+  sportId: z.number().min(1, 'Sport is required'),
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   schedules: z.array(scheduleSchema),
@@ -52,7 +52,7 @@ export default function FacilityEditPage() {
 
   // Images state
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([])
-  const [deleteImageIds, setDeleteImageIds] = useState<number[]>([])
+  const [deleteImageIds, _setDeleteImageIds] = useState<number[]>([])
   const [newImages, setNewImages] = useState<File[]>([])
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)

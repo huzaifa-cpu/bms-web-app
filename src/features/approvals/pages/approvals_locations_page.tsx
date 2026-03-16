@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Card, Table, Button, Badge, Modal, Form } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-import { BsEye, BsCheckCircle, BsXCircle } from 'react-icons/bs'
+import { BsEye } from 'react-icons/bs'
 import { toast } from 'react-toastify'
 import { EmptyState } from '../../../core/ui/components/empty_state'
 import { Loader } from '../../../core/ui/components/loader'
@@ -21,32 +21,17 @@ export default function ApprovalsLocationsPage() {
     size: pageSize,
   })
 
-  const [approveVenue, { isLoading: isApproving }] = useApproveVenueMutation()
+  const [_approveVenue, { isLoading: _isApproving }] = useApproveVenueMutation()
   const [rejectVenue, { isLoading: isRejecting }] = useRejectVenueMutation()
 
   const [showRejectModal, setShowRejectModal] = useState(false)
-  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null)
+  const [selectedLocationId, _setSelectedLocationId] = useState<number | null>(null)
   const [rejectNotes, setRejectNotes] = useState('')
 
   const springPage = data?.data
   const locations = springPage?.content ?? []
   const totalItems = springPage?.totalElements ?? 0
   const totalPages = springPage?.totalPages ?? 0
-
-  const handleApprove = async (locationId: number) => {
-    try {
-      await approveVenue({ venueId: locationId }).unwrap()
-      toast.success('Location approved successfully.')
-    } catch {
-      toast.error('Failed to approve location.')
-    }
-  }
-
-  const handleRejectClick = (locationId: number) => {
-    setSelectedLocationId(locationId)
-    setRejectNotes('')
-    setShowRejectModal(true)
-  }
 
   const handleRejectConfirm = async () => {
     if (!selectedLocationId) return

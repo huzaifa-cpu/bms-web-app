@@ -22,7 +22,7 @@ const schema = z.object({
       message: 'Mobile number must start with 03 and be 11 digits',
     }),
   password: z.string().min(8, 'Password must be at least 8 characters').max(100, 'Password must be at most 100 characters'),
-  roleId: z.number({ required_error: 'Role is required' }).min(1, 'Role is required'),
+  roleId: z.number().min(1, 'Role is required'),
 })
 type FormData = z.infer<typeof schema>
 

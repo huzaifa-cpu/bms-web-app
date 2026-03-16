@@ -1,3 +1,10 @@
+export interface TeamMemberDto {
+  userId: number
+  userName: string | null
+  userPhone: string | null
+  role: string
+}
+
 export interface TeamDto {
   id: number
   ownerUserId: number
@@ -8,6 +15,7 @@ export interface TeamDto {
   imageUrl?: string
   description?: string
   active: boolean
+  members?: TeamMemberDto[]
   createdOn: string
   updatedOn: string
 }

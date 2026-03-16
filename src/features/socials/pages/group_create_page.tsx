@@ -12,7 +12,7 @@ import { useCreateGroupMutation } from '../api/socials_api'
 
 const schema = z.object({
   name: z.string().min(2, 'Group name is required'),
-  sportId: z.number({ required_error: 'Sport is required' }).min(1, 'Sport is required'),
+  sportId: z.number().min(1, 'Sport is required'),
   description: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
