@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -8,10 +8,10 @@ import { toast } from 'react-toastify'
 import { BsSearch } from 'react-icons/bs'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetEmployeeQuery, useUpdateEmployeeMutation } from '../api/employees_api'
-import { useListProvidersQuery } from '../../providers/api/providers_api'
-import { useListLocationsByProviderQuery } from '../../locations/api/locations_api'
-import { useListFacilitiesByVenueQuery } from '../../facilities/api/facilities_api'
+import { useGetEmployeeMutation, useUpdateEmployeeMutation } from '../api/employees_api'
+import { useListProvidersMutation } from '../../providers/api/providers_api'
+import { useListLocationsByProviderMutation } from '../../locations/api/locations_api'
+import { useListFacilitiesByLocationMutation } from '../../facilities/api/facilities_api'
 
 const schema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -28,11 +28,19 @@ export default function EmployeeEditPage() {
   const { employeeId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetEmployeeQuery(Number(employeeId))
+  const [getEmployee, { data, isLoading, error }] = useGetEmployeeMutation()
   const employee = data?.data
 
-  const { data: providersData, isLoading: providersLoading } = useListProvidersQuery({ size: 100, approvalStates: ['APPROVED'] })
+  useEffect(() => {
+    getEmployee(Number(employeeId))
+  }, [employeeId])
+
+  const [listProviders, { data: providersData, isLoading: providersLoading }] = useListProvidersMutation()
   const providers = providersData?.data?.content ?? []
+
+  useEffect(() => {
+    listProviders({ size: 100, approvalStates: ['APPROVED'] })
+  }, [])
 
   const [updateEmployee] = useUpdateEmployeeMutation()
 
@@ -72,11 +80,15 @@ export default function EmployeeEditPage() {
   const selectedFacilityId = watch('facilityId')
 
   // Fetch locations for selected provider
-  const { data: locationsData, isLoading: locationsLoading } = useListLocationsByProviderQuery(selectedProviderId, {
-    skip: !selectedProviderId || selectedProviderId === 0,
-  })
+  const [listLocationsByProvider, { data: locationsData, isLoading: locationsLoading }] = useListLocationsByProviderMutation()
   const locations = locationsData?.data ?? []
   const selectedLocation = locations.find(l => l.id === selectedLocationId)
+
+  useEffect(() => {
+    if (selectedProviderId && selectedProviderId !== 0) {
+      listLocationsByProvider(selectedProviderId)
+    }
+  }, [selectedProviderId])
 
   const filteredLocations = useMemo(() => {
     if (!locationSearch.trim()) return locations
@@ -84,12 +96,16 @@ export default function EmployeeEditPage() {
     return locations.filter(l => l.name.toLowerCase().includes(search))
   }, [locations, locationSearch])
 
-  // Fetch facilities for selected location (venue)
-  const { data: facilitiesData, isLoading: facilitiesLoading } = useListFacilitiesByVenueQuery(selectedLocationId!, {
-    skip: !selectedLocationId,
-  })
+  // Fetch facilities for selected location
+  const [listFacilitiesByLocation, { data: facilitiesData, isLoading: facilitiesLoading }] = useListFacilitiesByLocationMutation()
   const facilities = facilitiesData?.data ?? []
   const selectedFacility = facilities.find(f => f.id === selectedFacilityId)
+
+  useEffect(() => {
+    if (selectedLocationId) {
+      listFacilitiesByLocation(selectedLocationId)
+    }
+  }, [selectedLocationId])
 
   const filteredFacilities = useMemo(() => {
     if (!facilitySearch.trim()) return facilities
@@ -98,7 +114,7 @@ export default function EmployeeEditPage() {
   }, [facilities, facilitySearch])
 
   if (isLoading) return <Loader fullPage />
-  if (error || !employee) return <ErrorState error="Employee not found." onRetry={refetch} />
+  if (error || !employee) return <ErrorState error="Employee not found." onRetry={() => getEmployee(Number(employeeId))} />
 
   const onSubmit = async (formData: FormData) => {
     try {

@@ -1,28 +1,33 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Badge, Modal, Form } from 'react-bootstrap'
 import { BsArrowLeft, BsCheckCircle, BsXCircle } from 'react-icons/bs'
 import { toast } from 'react-toastify'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetLocationQuery, useApproveVenueMutation, useRejectVenueMutation } from '../../locations/api/locations_api'
+import { useGetLocationMutation, useApproveLocationMutation, useRejectLocationMutation } from '../../locations/api/locations_api'
 
 export default function ApprovalsLocationDetailPage() {
   const { locationId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetLocationQuery(Number(locationId))
+  const [getLocation, { data, isLoading, error }] = useGetLocationMutation()
+
+  useEffect(() => {
+    getLocation(Number(locationId))
+  }, [locationId])
+
   const location = data?.data
 
-  const [approveVenue, { isLoading: isApproving }] = useApproveVenueMutation()
-  const [rejectVenue, { isLoading: isRejecting }] = useRejectVenueMutation()
+  const [approveLocation, { isLoading: isApproving }] = useApproveLocationMutation()
+  const [rejectLocation, { isLoading: isRejecting }] = useRejectLocationMutation()
 
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectNotes, setRejectNotes] = useState('')
 
   const handleApprove = async () => {
     try {
-      await approveVenue({ venueId: Number(locationId) }).unwrap()
+      await approveLocation({ locationId: Number(locationId) }).unwrap()
       toast.success('Location approved successfully.')
       navigate('/approvals/locations')
     } catch {
@@ -32,7 +37,7 @@ export default function ApprovalsLocationDetailPage() {
 
   const handleRejectConfirm = async () => {
     try {
-      await rejectVenue({ venueId: Number(locationId), request: { notes: rejectNotes } }).unwrap()
+      await rejectLocation({ locationId: Number(locationId), request: { notes: rejectNotes } }).unwrap()
       toast.success('Location rejected.')
       navigate('/approvals/locations')
     } catch {
@@ -41,7 +46,7 @@ export default function ApprovalsLocationDetailPage() {
   }
 
   if (isLoading) return <Loader fullPage />
-  if (error || !location) return <ErrorState error="Location not found." onRetry={refetch} />
+  if (error || !location) return <ErrorState error="Location not found." onRetry={() => getLocation(Number(locationId))} />
 
   return (
     <div>
@@ -127,4 +132,3 @@ export default function ApprovalsLocationDetailPage() {
     </div>
   )
 }
-

@@ -1,10 +1,11 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Badge, Table, Carousel } from 'react-bootstrap'
 import { BsArrowLeft, BsPencil } from 'react-icons/bs'
 import { StatusBadge } from '../../../core/ui/components/status_badge'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetFacilityQuery } from '../api/facilities_api'
+import { useGetFacilityMutation } from '../api/facilities_api'
 import RbacService from '../../../core/services/rbac_service'
 
 export default function FacilityDetailPage() {
@@ -12,11 +13,15 @@ export default function FacilityDetailPage() {
   const navigate = useNavigate()
   const canEdit = RbacService.can('FACILITIES', 'UPDATE')
 
-  const { data, isLoading, error, refetch } = useGetFacilityQuery(Number(facilityId))
+  const [getFacility, { data, isLoading, error }] = useGetFacilityMutation()
   const facility = data?.data
 
+  useEffect(() => {
+    if (facilityId) getFacility(Number(facilityId))
+  }, [facilityId])
+
   if (isLoading) return <Loader fullPage />
-  if (error || !facility) return <ErrorState error="Facility not found." onRetry={refetch} />
+  if (error || !facility) return <ErrorState error="Facility not found." onRetry={() => getFacility(Number(facilityId))} />
 
   return (
     <div>
@@ -52,7 +57,7 @@ export default function FacilityDetailPage() {
             <Col sm={6}><small className="text-muted">Name</small><p>{facility.name}</p></Col>
             <Col sm={6}><small className="text-muted">Sport</small><p>{facility.sportName ?? '—'}</p></Col>
             <Col sm={6}><small className="text-muted">Provider</small><p>{facility.providerName ?? '—'}</p></Col>
-            <Col sm={6}><small className="text-muted">Location</small><p>{facility.venueName ?? '—'}</p></Col>
+            <Col sm={6}><small className="text-muted">Location</small><p>{facility.locationName ?? '—'}</p></Col>
             <Col sm={12}><small className="text-muted">Description</small><p>{facility.description ?? '—'}</p></Col>
           </Row>
         </Card.Body>

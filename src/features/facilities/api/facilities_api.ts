@@ -13,10 +13,12 @@ import type {
 
 export const facilitiesApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    /* ── Approval endpoints ── */
-    listPendingFacilities: builder.query<GenericResponse<FacilityDto[]>, void>({
-      query: () => '/admin/facilities/pending',
-      providesTags: ['Facilities'],
+    /* -- Approval endpoints -- */
+    listPendingFacilities: builder.mutation<GenericResponse<FacilityDto[]>, void>({
+      query: () => ({
+        url: '/admin/facilities/pending',
+        method: 'POST',
+      }),
     }),
     approveFacility: builder.mutation<GenericResponse<FacilityDto>, { facilityId: number; request?: AdminFacilityDecisionRequest }>({
       query: ({ facilityId, request }) => ({
@@ -35,8 +37,8 @@ export const facilitiesApi = apiSlice.injectEndpoints({
       invalidatesTags: ['Facilities'],
     }),
 
-    /* ── Facility Management CRUD endpoints ── */
-    listFacilities: builder.query<GenericResponse<SpringPage<AdminFacilityDto>>, ListFacilitiesParams | void>({
+    /* -- Facility Management CRUD endpoints -- */
+    listFacilities: builder.mutation<GenericResponse<SpringPage<AdminFacilityDto>>, ListFacilitiesParams | void>({
       query: (params) => {
         const searchParams = new URLSearchParams()
         if (params?.approvalState && params.approvalState.length > 0) {
@@ -45,16 +47,23 @@ export const facilitiesApi = apiSlice.injectEndpoints({
         if (params?.search) searchParams.set('search', params.search)
         searchParams.set('page', String(params?.page ?? 0))
         searchParams.set('size', String(params?.size ?? 20))
-        return `/admin/facilities/manage?${searchParams.toString()}`
+        return {
+          url: `/admin/facilities/manage/list?${searchParams.toString()}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Facilities'],
     }),
-    getFacility: builder.query<GenericResponse<AdminFacilityDto>, number>({
-      query: (id) => `/admin/facilities/manage/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Facilities', id }],
+    getFacility: builder.mutation<GenericResponse<AdminFacilityDto>, number>({
+      query: (id) => ({
+        url: `/admin/facilities/manage/${id}/get`,
+        method: 'POST',
+      }),
     }),
-    listSports: builder.query<GenericResponse<SportDto[]>, void>({
-      query: () => '/admin/sports',
+    listSports: builder.mutation<GenericResponse<SportDto[]>, void>({
+      query: () => ({
+        url: '/admin/sports',
+        method: 'POST',
+      }),
     }),
     createFacility: builder.mutation<GenericResponse<AdminFacilityDto>, { request: AdminCreateFacilityRequest; images: File[] }>({
       query: ({ request, images }) => {
@@ -80,7 +89,7 @@ export const facilitiesApi = apiSlice.injectEndpoints({
         })
         return {
           url: `/admin/facilities/manage/${facilityId}`,
-          method: 'PUT',
+          method: 'POST',
           body,
         }
       },
@@ -89,27 +98,29 @@ export const facilitiesApi = apiSlice.injectEndpoints({
     toggleFacilityActive: builder.mutation<GenericResponse<null>, { facilityId: number; active: boolean }>({
       query: ({ facilityId, active }) => ({
         url: `/admin/facilities/manage/${facilityId}/active`,
-        method: 'PATCH',
+        method: 'POST',
         body: { active },
       }),
       invalidatesTags: ['Facilities'],
     }),
-    listFacilitiesByVenue: builder.query<GenericResponse<AdminFacilityDto[]>, number>({
-      query: (venueId) => `/admin/facilities/manage/by-venue/${venueId}`,
-      providesTags: ['Facilities'],
+    listFacilitiesByLocation: builder.mutation<GenericResponse<AdminFacilityDto[]>, number>({
+      query: (locationId) => ({
+        url: `/admin/facilities/manage/by-location/${locationId}`,
+        method: 'POST',
+      }),
     }),
   }),
 })
 
 export const {
-  useListPendingFacilitiesQuery,
+  useListPendingFacilitiesMutation,
   useApproveFacilityMutation,
   useRejectFacilityMutation,
-  useListFacilitiesQuery,
-  useGetFacilityQuery,
-  useListSportsQuery,
+  useListFacilitiesMutation,
+  useGetFacilityMutation,
+  useListSportsMutation,
   useCreateFacilityMutation,
   useUpdateFacilityMutation,
   useToggleFacilityActiveMutation,
-  useListFacilitiesByVenueQuery,
+  useListFacilitiesByLocationMutation,
 } = facilitiesApi

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Row, Col, Spinner } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -6,7 +7,7 @@ import {
   BsPersonBadge, BsArrowRight,
 } from 'react-icons/bs'
 import { ROUTES } from '../../../core/constants/routes'
-import { useGetDashboardStatsQuery } from '../api/dashboard_api'
+import { useGetDashboardStatsMutation } from '../api/dashboard_api'
 
 interface KpiCardProps {
   label: string
@@ -69,7 +70,8 @@ function QueueCard({ label, count, icon, to }: QueueCardProps) {
 }
 
 export default function DashboardPage() {
-  const { data: stats, isLoading, isError } = useGetDashboardStatsQuery()
+  const [getDashboardStats, { data: stats, isLoading, isError }] = useGetDashboardStatsMutation()
+  useEffect(() => { getDashboardStats() }, [])
 
   if (isLoading) {
     return (

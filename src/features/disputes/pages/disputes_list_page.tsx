@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Form, InputGroup, Row, Col } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsSearch, BsEye, BsPlus } from 'react-icons/bs'
@@ -7,7 +7,7 @@ import { Pagination } from '../../../core/ui/components/pagination'
 import { StatusBadge } from '../../../core/ui/components/status_badge'
 import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
-import { useListDisputesQuery } from '../api/disputes_api'
+import { useListDisputesMutation } from '../api/disputes_api'
 import type { DisputeDto } from '../api/disputes_types'
 import { formatDate } from '../../../core/utils/date_utils'
 import { ROUTES } from '../../../core/constants/routes'
@@ -20,8 +20,18 @@ export default function DisputesListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const pageSize = 10
 
-  const queryParams = statusFilter !== 'all' ? { status: statusFilter } : undefined
-  const { data, isLoading, error, refetch } = useListDisputesQuery(queryParams)
+  const [listDisputes, { data, isLoading, error }] = useListDisputesMutation()
+
+  useEffect(() => {
+    const queryParams = statusFilter !== 'all' ? { status: statusFilter } : undefined
+    listDisputes(queryParams)
+  }, [statusFilter])
+
+  const refetch = () => {
+    const queryParams = statusFilter !== 'all' ? { status: statusFilter } : undefined
+    listDisputes(queryParams)
+  }
+
   const disputes = data?.data ?? []
 
   const canCreate = RbacService.can('DISPUTES', 'CREATE')

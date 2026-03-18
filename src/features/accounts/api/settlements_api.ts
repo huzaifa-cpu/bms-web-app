@@ -11,7 +11,7 @@ import type {
 
 export const settlementsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    listSettlements: builder.query<GenericResponse<SpringPage<SettlementDto>>, ListSettlementsParams | void>({
+    listSettlements: builder.mutation<GenericResponse<SpringPage<SettlementDto>>, ListSettlementsParams | void>({
       query: (params) => {
         const sp = new URLSearchParams()
         if (params?.status) sp.set('status', params.status)
@@ -19,34 +19,42 @@ export const settlementsApi = apiSlice.injectEndpoints({
         if (params?.providerUserId) sp.set('providerUserId', String(params.providerUserId))
         sp.set('page', String(params?.page ?? 0))
         sp.set('size', String(params?.size ?? 20))
-        return `/admin/settlements?${sp.toString()}`
+        return {
+          url: `/admin/settlements?${sp.toString()}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Settlements'],
     }),
 
-    getSettlementSummary: builder.query<GenericResponse<SettlementSummaryDto>, { type?: string } | void>({
+    getSettlementSummary: builder.mutation<GenericResponse<SettlementSummaryDto>, { type?: string } | void>({
       query: (params) => {
         const sp = new URLSearchParams()
         if (params?.type) sp.set('type', params.type)
-        return `/admin/settlements/summary?${sp.toString()}`
+        return {
+          url: `/admin/settlements/summary?${sp.toString()}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Settlements'],
     }),
 
-    getSettlement: builder.query<GenericResponse<SettlementDto>, number>({
-      query: (id) => `/admin/settlements/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Settlements', id }],
+    getSettlement: builder.mutation<GenericResponse<SettlementDto>, number>({
+      query: (id) => ({
+        url: `/admin/settlements/${id}`,
+        method: 'POST',
+      }),
     }),
 
-    getSettlementItems: builder.query<GenericResponse<SettlementItemDto[]>, number>({
-      query: (id) => `/admin/settlements/${id}/items`,
-      providesTags: (_result, _error, id) => [{ type: 'Settlements', id }],
+    getSettlementItems: builder.mutation<GenericResponse<SettlementItemDto[]>, number>({
+      query: (id) => ({
+        url: `/admin/settlements/${id}/items`,
+        method: 'POST',
+      }),
     }),
 
     approveSettlement: builder.mutation<GenericResponse<SettlementDto>, number>({
       query: (id) => ({
         url: `/admin/settlements/${id}/approve`,
-        method: 'PATCH',
+        method: 'POST',
       }),
       invalidatesTags: ['Settlements'],
     }),
@@ -54,7 +62,7 @@ export const settlementsApi = apiSlice.injectEndpoints({
     markSettlementPaid: builder.mutation<GenericResponse<SettlementDto>, number>({
       query: (id) => ({
         url: `/admin/settlements/${id}/mark-paid`,
-        method: 'PATCH',
+        method: 'POST',
       }),
       invalidatesTags: ['Settlements'],
     }),
@@ -62,7 +70,7 @@ export const settlementsApi = apiSlice.injectEndpoints({
     markSettlementFailed: builder.mutation<GenericResponse<SettlementDto>, { id: number; body: MarkSettlementFailedRequest }>({
       query: ({ id, body }) => ({
         url: `/admin/settlements/${id}/mark-failed`,
-        method: 'PATCH',
+        method: 'POST',
         body,
       }),
       invalidatesTags: ['Settlements'],
@@ -87,10 +95,10 @@ export const settlementsApi = apiSlice.injectEndpoints({
 })
 
 export const {
-  useListSettlementsQuery,
-  useGetSettlementSummaryQuery,
-  useGetSettlementQuery,
-  useGetSettlementItemsQuery,
+  useListSettlementsMutation,
+  useGetSettlementSummaryMutation,
+  useGetSettlementMutation,
+  useGetSettlementItemsMutation,
   useApproveSettlementMutation,
   useMarkSettlementPaidMutation,
   useMarkSettlementFailedMutation,

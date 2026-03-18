@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,8 +6,8 @@ import { Card, Form, Button, InputGroup, ListGroup, Badge, Dropdown, Spinner } f
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { BsCamera, BsSearch, BsX, BsCheckCircleFill } from 'react-icons/bs'
-import { useListSportsQuery } from '../../facilities/api/facilities_api'
-import { useListConsumersQuery } from '../../consumers/api/consumers_api'
+import { useListSportsMutation } from '../../facilities/api/facilities_api'
+import { useListConsumersMutation } from '../../consumers/api/consumers_api'
 import { useCreateTeamMutation } from '../api/socials_api'
 
 const schema = z.object({
@@ -36,17 +36,26 @@ export default function TeamCreatePage() {
   const [members, setMembers] = useState<Member[]>([])
   const [showSearchResults, setShowSearchResults] = useState(false)
 
-  // API queries
-  const { data: sportsData, isLoading: sportsLoading } = useListSportsQuery()
+  // API mutations
+  const [listSports, { data: sportsData, isLoading: sportsLoading }] = useListSportsMutation()
   const sports = sportsData?.data ?? []
 
-  const { data: consumersData, isLoading: consumersLoading } = useListConsumersQuery(
-    { search: memberSearch, size: 10 },
-    { skip: memberSearch.length < 3 }
-  )
+  const [listConsumers, { data: consumersData, isLoading: consumersLoading }] = useListConsumersMutation()
   const consumers = consumersData?.data?.content ?? []
 
   const [createTeam, { isLoading: isCreating }] = useCreateTeamMutation()
+
+  // Fetch sports on mount
+  useEffect(() => {
+    listSports()
+  }, [])
+
+  // Fetch consumers when search changes
+  useEffect(() => {
+    if (memberSearch.length >= 3) {
+      listConsumers({ search: memberSearch, size: 10 })
+    }
+  }, [memberSearch])
 
   const { register, handleSubmit, formState: { errors }, control, setValue, watch } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -303,4 +312,3 @@ export default function TeamCreatePage() {
     </div>
   )
 }
-

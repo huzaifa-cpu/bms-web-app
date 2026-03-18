@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Form } from 'react-bootstrap'
 import { BsArrowLeft, BsXCircle } from 'react-icons/bs'
@@ -8,7 +8,7 @@ import { ConfirmDialog } from '../../../core/ui/components/confirm_dialog'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
 import RbacService from '../../../core/services/rbac_service'
-import { useGetBookingQuery, useForceCancelBookingMutation } from '../api/bookings_api'
+import { useGetBookingMutation, useForceCancelBookingMutation } from '../api/bookings_api'
 import { formatDateTime } from '../../../core/utils/date_utils'
 import { formatCurrency } from '../../../core/utils/number_utils'
 import StorageService from '../../../core/services/storage_service'
@@ -22,8 +22,14 @@ export default function BookingDetailPage() {
   const { bookingId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetBookingQuery(Number(bookingId))
+  const [getBooking, { data, isLoading, error }] = useGetBookingMutation()
   const booking = data?.data
+
+  const refetch = () => getBooking(Number(bookingId))
+
+  useEffect(() => {
+    getBooking(Number(bookingId))
+  }, [bookingId])
 
   const [forceCancel, { isLoading: isCancelling }] = useForceCancelBookingMutation()
 
@@ -65,9 +71,10 @@ export default function BookingDetailPage() {
             <Card.Header><strong>Booking Details</strong></Card.Header>
             <Card.Body>
               <Row>
-                <Col sm={6}><small className="text-muted">Consumer ID</small><p>{booking.consumerUserId}</p></Col>
-                <Col sm={6}><small className="text-muted">Provider ID</small><p>{booking.providerUserId}</p></Col>
-                <Col sm={6}><small className="text-muted">Facility ID</small><p>{booking.facilityId}</p></Col>
+                <Col sm={6}><small className="text-muted">Consumer</small><p>{booking.consumerName ?? booking.consumerUserId}</p></Col>
+                <Col sm={6}><small className="text-muted">Provider</small><p>{booking.providerName ?? booking.providerUserId}</p></Col>
+                <Col sm={6}><small className="text-muted">Location</small><p>{booking.locationName ?? '—'}</p></Col>
+                <Col sm={6}><small className="text-muted">Facility</small><p>{booking.facilityName ?? booking.facilityId}</p></Col>
                 <Col sm={6}><small className="text-muted">Booking Date</small><p>{booking.bookingDate ?? '—'}</p></Col>
                 <Col sm={6}><small className="text-muted">Start Time</small><p>{formatDateTime(booking.startTime)}</p></Col>
                 <Col sm={6}><small className="text-muted">End Time</small><p>{formatDateTime(booking.endTime)}</p></Col>

@@ -1,17 +1,24 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Badge } from 'react-bootstrap'
 import { BsArrowLeft, BsController, BsGeoAlt, BsCalendar, BsGenderAmbiguous } from 'react-icons/bs'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetConsumerQuery } from '../api/consumers_api'
+import { useGetConsumerMutation } from '../api/consumers_api'
 import { formatDateTime } from '../../../core/utils/date_utils'
 
 export default function ConsumerDetailPage() {
   const { consumerId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetConsumerQuery(Number(consumerId))
+  const [getConsumer, { data, isLoading, error }] = useGetConsumerMutation()
   const consumer = data?.data
+
+  useEffect(() => {
+    getConsumer(Number(consumerId))
+  }, [consumerId])
+
+  const refetch = () => getConsumer(Number(consumerId))
 
   if (isLoading) return <Loader fullPage />
   if (error || !consumer) return <ErrorState error="Consumer not found." onRetry={refetch} />

@@ -15,8 +15,13 @@ export interface BookingDto {
   createdBy: string
   updatedBy: string
   consumerUserId: number
+  consumerName: string | null
   providerUserId: number
+  providerName: string | null
   facilityId: number
+  facilityName: string | null
+  locationId: number | null
+  locationName: string | null
   scheduleConfigId: number | null
   bookingRef: string | null
   status: BookingStatusDto
@@ -45,7 +50,7 @@ export interface AdminForceCancelRequest {
 
 /** Matches backend CreateWalkInBookingRequest */
 export interface CreateWalkInBookingRequest {
-  providerUserId: number
+  locationId: number
   facilityId: number
   bookingDate: string
   startTime: string

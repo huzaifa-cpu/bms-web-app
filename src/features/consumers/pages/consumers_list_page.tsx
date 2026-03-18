@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Badge, Form, InputGroup, Row, Col, Button } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsSearch, BsEye, BsPencil, BsToggleOn, BsToggleOff } from 'react-icons/bs'
@@ -7,7 +7,7 @@ import { EmptyState } from '../../../core/ui/components/empty_state'
 import { Pagination } from '../../../core/ui/components/pagination'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useListConsumersQuery, useToggleConsumerStatusMutation } from '../api/consumers_api'
+import { useListConsumersMutation, useToggleConsumerStatusMutation } from '../api/consumers_api'
 import RbacService from '../../../core/services/rbac_service'
 
 export default function ConsumersListPage() {
@@ -19,14 +19,25 @@ export default function ConsumersListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const pageSize = 20
 
-  const { data, isLoading, error, refetch } = useListConsumersQuery({
+  const [listConsumers, { data, isLoading, error }] = useListConsumersMutation()
+  const springPage = data?.data
+  const consumers = springPage?.content ?? []
+
+  useEffect(() => {
+    listConsumers({
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      search: search || undefined,
+      page,
+      size: pageSize,
+    })
+  }, [search, page, statusFilter])
+
+  const refetch = () => listConsumers({
     status: statusFilter !== 'all' ? statusFilter : undefined,
     search: search || undefined,
     page,
     size: pageSize,
   })
-  const springPage = data?.data
-  const consumers = springPage?.content ?? []
 
   const [toggleStatus] = useToggleConsumerStatusMutation()
 
@@ -35,6 +46,7 @@ export default function ConsumersListPage() {
     try {
       await toggleStatus({ consumerId, status: newStatus }).unwrap()
       toast.success('Consumer status updated.')
+      refetch()
     } catch {
       toast.error('Failed to update consumer status.')
     }

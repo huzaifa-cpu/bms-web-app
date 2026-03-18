@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Badge, Form, Row, Col, Button, Spinner } from 'react-bootstrap'
 import { BsEye } from 'react-icons/bs'
 import { useNavigate } from 'react-router-dom'
 import { EmptyState } from '../../../core/ui/components/empty_state'
 import { Pagination } from '../../../core/ui/components/pagination'
-import { useListNotificationHistoryQuery } from '../api/notifications_api'
+import { useListNotificationHistoryMutation } from '../api/notifications_api'
 import type { NotificationStatus, NotificationChannel } from '../api/notifications_types'
 
 const STATUS_OPTIONS: NotificationStatus[] = ['QUEUED', 'SENT', 'FAILED', 'CANCELED']
@@ -27,12 +27,16 @@ export default function NotificationsHistoryPage() {
   const [channelFilter, setChannelFilter] = useState<string>('')
   const pageSize = 10
 
-  const { data, isLoading, isError } = useListNotificationHistoryQuery({
-    status: statusFilter ? statusFilter as NotificationStatus : undefined,
-    channel: channelFilter ? channelFilter as NotificationChannel : undefined,
-    page: page - 1,
-    size: pageSize,
-  })
+  const [listNotificationHistory, { data, isLoading, isError }] = useListNotificationHistoryMutation()
+
+  useEffect(() => {
+    listNotificationHistory({
+      status: statusFilter ? statusFilter as NotificationStatus : undefined,
+      channel: channelFilter ? channelFilter as NotificationChannel : undefined,
+      page: page - 1,
+      size: pageSize,
+    })
+  }, [statusFilter, channelFilter, page])
 
   return (
     <div>

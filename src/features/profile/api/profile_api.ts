@@ -4,9 +4,11 @@ import type { AdminProfileResponse, UpdateProfilePayload, ChangePasswordRequest 
 
 export const profileApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getProfile: builder.query<GenericResponse<AdminProfileResponse>, void>({
-      query: () => '/admin/profile',
-      providesTags: ['Profile'],
+    getProfile: builder.mutation<GenericResponse<AdminProfileResponse>, void>({
+      query: () => ({
+        url: '/admin/profile/get',
+        method: 'POST',
+      }),
     }),
     updateProfile: builder.mutation<GenericResponse<AdminProfileResponse>, UpdateProfilePayload>({
       query: (payload) => {
@@ -19,7 +21,7 @@ export const profileApi = apiSlice.injectEndpoints({
         }
         return {
           url: '/admin/profile',
-          method: 'PUT',
+          method: 'POST',
           body: formData,
           // Empty headers object prevents RTK Query from setting Content-Type
           // Browser will set correct multipart/form-data with boundary
@@ -31,12 +33,11 @@ export const profileApi = apiSlice.injectEndpoints({
     changePassword: builder.mutation<GenericResponse<null>, ChangePasswordRequest>({
       query: (request) => ({
         url: '/admin/profile/change-password',
-        method: 'PUT',
+        method: 'POST',
         body: request,
       }),
     }),
   }),
 })
 
-export const { useGetProfileQuery, useLazyGetProfileQuery, useUpdateProfileMutation, useChangePasswordMutation } = profileApi
-
+export const { useGetProfileMutation, useUpdateProfileMutation, useChangePasswordMutation } = profileApi

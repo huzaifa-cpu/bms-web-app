@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { toast } from 'react-toastify'
 import { BsCamera } from 'react-icons/bs'
 import StorageService from '../../../core/services/storage_service'
-import { useGetProfileQuery, useUpdateProfileMutation, useChangePasswordMutation } from '../api/profile_api'
+import { useGetProfileMutation, useUpdateProfileMutation, useChangePasswordMutation } from '../api/profile_api'
 
 const profileSchema = z.object({
   username: z.string()
@@ -35,8 +35,10 @@ type ProfileForm = z.infer<typeof profileSchema>
 type PasswordForm = z.infer<typeof passwordSchema>
 
 export default function ProfilePage() {
-  const { data: profileData, isLoading, isError, error } = useGetProfileQuery()
+  const [getProfile, { data: profileData, isLoading, isError, error }] = useGetProfileMutation()
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation()
+
+  useEffect(() => { getProfile(); }, [])
   const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation()
 
   const profile = profileData?.data

@@ -8,9 +8,9 @@ import { toast } from 'react-toastify'
 import { BsCamera, BsSearch, BsX, BsShieldFill } from 'react-icons/bs'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useListSportsQuery } from '../../facilities/api/facilities_api'
-import { useListConsumersQuery } from '../../consumers/api/consumers_api'
-import { useGetGroupQuery, useUpdateGroupMutation } from '../api/socials_api'
+import { useListSportsMutation } from '../../facilities/api/facilities_api'
+import { useListConsumersMutation } from '../../consumers/api/consumers_api'
+import { useGetGroupMutation, useUpdateGroupMutation } from '../api/socials_api'
 
 const schema = z.object({
   name: z.string().min(2, 'Group name is required'),
@@ -26,7 +26,7 @@ export default function GroupEditPage() {
   const navigate = useNavigate()
 
   // Fetch group data
-  const { data: groupData, isLoading: groupLoading, error: groupError, refetch } = useGetGroupQuery(Number(groupId))
+  const [getGroup, { data: groupData, isLoading: groupLoading, error: groupError }] = useGetGroupMutation()
   const group = groupData?.data
 
   // Image state
@@ -43,17 +43,31 @@ export default function GroupEditPage() {
   const [members, setMembers] = useState<Member[]>([])
   const [showSearchResults, setShowSearchResults] = useState(false)
 
-  // API queries
-  const { data: sportsData, isLoading: sportsLoading } = useListSportsQuery()
+  // API mutations
+  const [listSports, { data: sportsData, isLoading: sportsLoading }] = useListSportsMutation()
   const sports = sportsData?.data ?? []
 
-  const { data: consumersData, isLoading: consumersLoading } = useListConsumersQuery(
-    { search: memberSearch, size: 10 },
-    { skip: memberSearch.length < 3 }
-  )
+  const [listConsumers, { data: consumersData, isLoading: consumersLoading }] = useListConsumersMutation()
   const consumers = consumersData?.data?.content ?? []
 
   const [updateGroup, { isLoading: isUpdating }] = useUpdateGroupMutation()
+
+  // Fetch group on mount
+  useEffect(() => {
+    getGroup(Number(groupId))
+  }, [groupId])
+
+  // Fetch sports on mount
+  useEffect(() => {
+    listSports()
+  }, [])
+
+  // Fetch consumers when search changes
+  useEffect(() => {
+    if (memberSearch.length >= 3) {
+      listConsumers({ search: memberSearch, size: 10 })
+    }
+  }, [memberSearch])
 
   const { register, handleSubmit, formState: { errors }, control, setValue, watch, reset } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -161,7 +175,7 @@ export default function GroupEditPage() {
   }
 
   if (groupLoading) return <Loader fullPage />
-  if (groupError || !group) return <ErrorState error="Group not found." onRetry={refetch} />
+  if (groupError || !group) return <ErrorState error="Group not found." onRetry={() => getGroup(Number(groupId))} />
 
   return (
     <div>
@@ -335,4 +349,3 @@ export default function GroupEditPage() {
     </div>
   )
 }
-

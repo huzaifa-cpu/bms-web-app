@@ -1,21 +1,27 @@
+import { useEffect } from 'react'
 import { Card, Row, Col, Badge, Button, ListGroup } from 'react-bootstrap'
 import { useNavigate, useParams } from 'react-router-dom'
 import { BsPencil, BsCalendar, BsPersonFill, BsShieldFill } from 'react-icons/bs'
 import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import RbacService from '../../../core/services/rbac_service'
-import { useGetGroupQuery } from '../api/socials_api'
+import { useGetGroupMutation } from '../api/socials_api'
 
 export default function GroupDetailPage() {
   const { groupId } = useParams()
   const navigate = useNavigate()
   const canEdit = RbacService.can('GROUPS', 'UPDATE')
 
-  const { data, isLoading, error, refetch } = useGetGroupQuery(Number(groupId))
+  const [getGroup, { data, isLoading, error }] = useGetGroupMutation()
+
+  useEffect(() => {
+    getGroup(Number(groupId))
+  }, [groupId])
+
   const group = data?.data
 
   if (isLoading) return <Loader />
-  if (error || !group) return <ErrorState error="Group not found." onRetry={refetch} />
+  if (error || !group) return <ErrorState error="Group not found." onRetry={() => getGroup(Number(groupId))} />
 
   return (
     <div>

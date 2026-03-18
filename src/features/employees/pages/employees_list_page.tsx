@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Badge, Form, InputGroup, Row, Col } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsSearch, BsEye, BsPencil, BsToggleOn, BsToggleOff } from 'react-icons/bs'
@@ -7,7 +7,7 @@ import { EmptyState } from '../../../core/ui/components/empty_state'
 import { Pagination } from '../../../core/ui/components/pagination'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useListEmployeesQuery, useToggleEmployeeStatusMutation } from '../api/employees_api'
+import { useListEmployeesMutation, useToggleEmployeeStatusMutation } from '../api/employees_api'
 import RbacService from '../../../core/services/rbac_service'
 
 export default function EmployeesListPage() {
@@ -19,14 +19,18 @@ export default function EmployeesListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const pageSize = 20
 
-  const { data, isLoading, error, refetch } = useListEmployeesQuery({
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    search: search || undefined,
-    page,
-    size: pageSize,
-  })
+  const [listEmployees, { data, isLoading, error }] = useListEmployeesMutation()
   const springPage = data?.data
   const employees = springPage?.content ?? []
+
+  useEffect(() => {
+    listEmployees({
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      search: search || undefined,
+      page,
+      size: pageSize,
+    })
+  }, [statusFilter, search, page])
 
   const [toggleStatus] = useToggleEmployeeStatusMutation()
 
@@ -35,13 +39,24 @@ export default function EmployeesListPage() {
       const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
       await toggleStatus({ employeeId, status: newStatus }).unwrap()
       toast.success('Employee status updated.')
+      listEmployees({
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        search: search || undefined,
+        page,
+        size: pageSize,
+      })
     } catch {
       toast.error('Failed to update employee status.')
     }
   }
 
   if (isLoading) return <Loader fullPage />
-  if (error) return <ErrorState error="Failed to load employees." onRetry={refetch} />
+  if (error) return <ErrorState error="Failed to load employees." onRetry={() => listEmployees({
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    search: search || undefined,
+    page,
+    size: pageSize,
+  })} />
 
   return (
     <div>

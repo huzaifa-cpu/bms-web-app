@@ -26,8 +26,8 @@ export interface SportDto {
 /** Matches backend AdminFacilityDto */
 export interface AdminFacilityDto {
   id: number
-  venueId: number | null
-  venueName: string | null
+  locationId: number | null
+  locationName: string | null
   providerUserId: number | null
   providerName: string | null
   sportId: number | null
@@ -55,7 +55,7 @@ export interface FacilityDto {
   updatedOn: string
   createdBy: string
   updatedBy: string
-  venueId: number
+  locationId: number
   name: string
   sportId: number | null
   capacity: number | null
@@ -91,7 +91,7 @@ export interface ListFacilitiesParams {
 /** Admin create facility request */
 export interface AdminCreateFacilityRequest {
   providerUserId: number
-  venueId: number
+  locationId: number
   sportId: number
   name: string
   description?: string
@@ -101,7 +101,7 @@ export interface AdminCreateFacilityRequest {
 /** Admin update facility request */
 export interface AdminUpdateFacilityRequest {
   providerUserId: number
-  venueId: number
+  locationId: number
   sportId: number
   name: string
   description?: string

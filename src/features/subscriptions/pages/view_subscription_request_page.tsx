@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Button, Row, Col, Badge, Spinner, Form } from 'react-bootstrap'
 import { useNavigate, useParams } from 'react-router-dom'
 import { BsArrowLeft, BsCheckCircle, BsXCircle } from 'react-icons/bs'
@@ -7,7 +7,7 @@ import { ROUTES } from '../../../core/constants/routes'
 import { ConfirmDialog } from '../../../core/ui/components/confirm_dialog'
 import RbacService from '../../../core/services/rbac_service'
 import StorageService from '../../../core/services/storage_service'
-import { useGetSubscriptionRequestQuery, useReviewSubscriptionRequestMutation } from '../api/subscriptions_api'
+import { useGetSubscriptionRequestMutation, useReviewSubscriptionRequestMutation } from '../api/subscriptions_api'
 
 export default function ViewSubscriptionRequestPage() {
   const { id } = useParams<{ id: string }>()
@@ -21,8 +21,12 @@ export default function ViewSubscriptionRequestPage() {
   const [action, setAction] = useState<'APPROVE' | 'REJECT'>('APPROVE')
   const [remarks, setRemarks] = useState('')
 
-  const { data, isLoading, isError } = useGetSubscriptionRequestQuery(requestId)
+  const [getSubscriptionRequest, { data, isLoading, isError }] = useGetSubscriptionRequestMutation()
   const [reviewRequest, { isLoading: isReviewing }] = useReviewSubscriptionRequestMutation()
+
+  useEffect(() => {
+    getSubscriptionRequest(requestId)
+  }, [requestId])
 
   const request = data?.data
 
@@ -225,4 +229,3 @@ export default function ViewSubscriptionRequestPage() {
     </div>
   )
 }
-

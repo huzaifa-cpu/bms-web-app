@@ -9,25 +9,29 @@ import type {
 
 export const employeesApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    listEmployees: builder.query<GenericResponse<SpringPage<AdminEmployeeDto>>, ListEmployeesParams | void>({
+    listEmployees: builder.mutation<GenericResponse<SpringPage<AdminEmployeeDto>>, ListEmployeesParams | void>({
       query: (params) => {
         const searchParams = new URLSearchParams()
         if (params?.status) searchParams.set('status', params.status)
         if (params?.search) searchParams.set('search', params.search)
         searchParams.set('page', String(params?.page ?? 0))
         searchParams.set('size', String(params?.size ?? 20))
-        return `/admin/employees?${searchParams.toString()}`
+        return {
+          url: `/admin/employees?${searchParams.toString()}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Employees'],
     }),
-    getEmployee: builder.query<GenericResponse<AdminEmployeeDto>, number>({
-      query: (id) => `/admin/employees/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Employees', id }],
+    getEmployee: builder.mutation<GenericResponse<AdminEmployeeDto>, number>({
+      query: (id) => ({
+        url: `/admin/employees/${id}/get`,
+        method: 'POST',
+      }),
     }),
     updateEmployee: builder.mutation<GenericResponse<AdminEmployeeDto>, { employeeId: number; request: AdminUpdateEmployeeRequest }>({
       query: ({ employeeId, request }) => ({
         url: `/admin/employees/${employeeId}`,
-        method: 'PUT',
+        method: 'POST',
         body: request,
       }),
       invalidatesTags: ['Employees'],
@@ -35,7 +39,7 @@ export const employeesApi = apiSlice.injectEndpoints({
     toggleEmployeeStatus: builder.mutation<GenericResponse<null>, { employeeId: number; status: string }>({
       query: ({ employeeId, status }) => ({
         url: `/admin/employees/${employeeId}/status`,
-        method: 'PATCH',
+        method: 'POST',
         body: { status },
       }),
       invalidatesTags: ['Employees'],
@@ -44,8 +48,8 @@ export const employeesApi = apiSlice.injectEndpoints({
 })
 
 export const {
-  useListEmployeesQuery,
-  useGetEmployeeQuery,
+  useListEmployeesMutation,
+  useGetEmployeeMutation,
   useUpdateEmployeeMutation,
   useToggleEmployeeStatusMutation,
 } = employeesApi

@@ -15,20 +15,24 @@ import type {
 
 export const socialsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    /* ── Teams ── */
-    listTeams: builder.query<GenericResponse<SpringPage<TeamDto>>, ListSocialsParams>({
+    /* -- Teams -- */
+    listTeams: builder.mutation<GenericResponse<SpringPage<TeamDto>>, ListSocialsParams>({
       query: ({ active, page = 0, size = 20 }) => {
         const params = new URLSearchParams()
         if (active !== undefined) params.append('active', String(active))
         params.append('page', String(page))
         params.append('size', String(size))
-        return `/admin/social/teams?${params.toString()}`
+        return {
+          url: `/admin/social/teams/list?${params.toString()}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Teams'],
     }),
-    getTeam: builder.query<GenericResponse<TeamDto>, number>({
-      query: (teamId) => `/admin/social/teams/${teamId}`,
-      providesTags: (_r, _e, id) => [{ type: 'Teams', id }],
+    getTeam: builder.mutation<GenericResponse<TeamDto>, number>({
+      query: (teamId) => ({
+        url: `/admin/social/teams/${teamId}/get`,
+        method: 'POST',
+      }),
     }),
     createTeam: builder.mutation<GenericResponse<TeamDto>, { request: CreateTeamRequest; image?: File }>({
       query: ({ request, image }) => {
@@ -54,7 +58,7 @@ export const socialsApi = apiSlice.injectEndpoints({
         }
         return {
           url: `/admin/social/teams/${teamId}`,
-          method: 'PUT',
+          method: 'POST',
           body,
         }
       },
@@ -63,29 +67,36 @@ export const socialsApi = apiSlice.injectEndpoints({
     toggleTeamActive: builder.mutation<GenericResponse<TeamDto>, { teamId: number; active: boolean }>({
       query: ({ teamId, active }) => ({
         url: `/admin/social/teams/${teamId}/active`,
-        method: 'PATCH',
+        method: 'POST',
         body: { active },
       }),
       invalidatesTags: ['Teams'],
     }),
 
-    /* ── Games ── */
-    listGameFormats: builder.query<GenericResponse<GameFormatDto[]>, void>({
-      query: () => '/admin/social/games/formats',
+    /* -- Games -- */
+    listGameFormats: builder.mutation<GenericResponse<GameFormatDto[]>, void>({
+      query: () => ({
+        url: '/admin/social/games/formats',
+        method: 'POST',
+      }),
     }),
-    listGames: builder.query<GenericResponse<SpringPage<GameDto>>, ListGamesParams>({
+    listGames: builder.mutation<GenericResponse<SpringPage<GameDto>>, ListGamesParams>({
       query: ({ status, page = 0, size = 20 }) => {
         const params = new URLSearchParams()
         if (status) params.append('status', status)
         params.append('page', String(page))
         params.append('size', String(size))
-        return `/admin/social/games?${params.toString()}`
+        return {
+          url: `/admin/social/games/list?${params.toString()}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Games'],
     }),
-    getGame: builder.query<GenericResponse<GameDto>, number>({
-      query: (gameId) => `/admin/social/games/${gameId}`,
-      providesTags: (_r, _e, id) => [{ type: 'Games', id }],
+    getGame: builder.mutation<GenericResponse<GameDto>, number>({
+      query: (gameId) => ({
+        url: `/admin/social/games/${gameId}/get`,
+        method: 'POST',
+      }),
     }),
     createGame: builder.mutation<GenericResponse<GameDto>, CreateGameRequest>({
       query: (request) => ({
@@ -98,7 +109,7 @@ export const socialsApi = apiSlice.injectEndpoints({
     updateGame: builder.mutation<GenericResponse<GameDto>, { gameId: number; request: CreateGameRequest }>({
       query: ({ gameId, request }) => ({
         url: `/admin/social/games/${gameId}`,
-        method: 'PUT',
+        method: 'POST',
         body: request,
       }),
       invalidatesTags: ['Games'],
@@ -106,33 +117,37 @@ export const socialsApi = apiSlice.injectEndpoints({
     cancelGame: builder.mutation<GenericResponse<GameDto>, number>({
       query: (gameId) => ({
         url: `/admin/social/games/${gameId}/cancel`,
-        method: 'PATCH',
+        method: 'POST',
       }),
       invalidatesTags: ['Games'],
     }),
     rescheduleGame: builder.mutation<GenericResponse<GameDto>, { gameId: number; request: CreateGameRequest }>({
       query: ({ gameId, request }) => ({
         url: `/admin/social/games/${gameId}/reschedule`,
-        method: 'PATCH',
+        method: 'POST',
         body: request,
       }),
       invalidatesTags: ['Games'],
     }),
 
-    /* ── Groups ── */
-    listGroups: builder.query<GenericResponse<SpringPage<CommunityGroupDto>>, ListSocialsParams>({
+    /* -- Groups -- */
+    listGroups: builder.mutation<GenericResponse<SpringPage<CommunityGroupDto>>, ListSocialsParams>({
       query: ({ active, page = 0, size = 20 }) => {
         const params = new URLSearchParams()
         if (active !== undefined) params.append('active', String(active))
         params.append('page', String(page))
         params.append('size', String(size))
-        return `/admin/social/groups?${params.toString()}`
+        return {
+          url: `/admin/social/groups/list?${params.toString()}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Groups'],
     }),
-    getGroup: builder.query<GenericResponse<CommunityGroupDto>, number>({
-      query: (groupId) => `/admin/social/groups/${groupId}`,
-      providesTags: (_r, _e, id) => [{ type: 'Groups', id }],
+    getGroup: builder.mutation<GenericResponse<CommunityGroupDto>, number>({
+      query: (groupId) => ({
+        url: `/admin/social/groups/${groupId}/get`,
+        method: 'POST',
+      }),
     }),
     createGroup: builder.mutation<GenericResponse<CommunityGroupDto>, { request: CreateGroupRequest; image?: File }>({
       query: ({ request, image }) => {
@@ -158,7 +173,7 @@ export const socialsApi = apiSlice.injectEndpoints({
         }
         return {
           url: `/admin/social/groups/${groupId}`,
-          method: 'PUT',
+          method: 'POST',
           body,
         }
       },
@@ -167,7 +182,7 @@ export const socialsApi = apiSlice.injectEndpoints({
     toggleGroupActive: builder.mutation<GenericResponse<CommunityGroupDto>, { groupId: number; active: boolean }>({
       query: ({ groupId, active }) => ({
         url: `/admin/social/groups/${groupId}/active`,
-        method: 'PATCH',
+        method: 'POST',
         body: { active },
       }),
       invalidatesTags: ['Groups'],
@@ -176,20 +191,20 @@ export const socialsApi = apiSlice.injectEndpoints({
 })
 
 export const {
-  useListTeamsQuery,
-  useGetTeamQuery,
+  useListTeamsMutation,
+  useGetTeamMutation,
   useCreateTeamMutation,
   useUpdateTeamMutation,
   useToggleTeamActiveMutation,
-  useListGameFormatsQuery,
-  useListGamesQuery,
-  useGetGameQuery,
+  useListGameFormatsMutation,
+  useListGamesMutation,
+  useGetGameMutation,
   useCreateGameMutation,
   useUpdateGameMutation,
   useCancelGameMutation,
   useRescheduleGameMutation,
-  useListGroupsQuery,
-  useGetGroupQuery,
+  useListGroupsMutation,
+  useGetGroupMutation,
   useCreateGroupMutation,
   useUpdateGroupMutation,
   useToggleGroupActiveMutation,

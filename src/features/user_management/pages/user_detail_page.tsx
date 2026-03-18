@@ -1,19 +1,24 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Badge } from 'react-bootstrap'
 import { BsArrowLeft } from 'react-icons/bs'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetUserQuery } from '../api/users_api'
+import { useGetUserMutation } from '../api/users_api'
 
 export default function UserDetailPage() {
   const { userId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetUserQuery(Number(userId))
+  const [getUser, { data, isLoading, error }] = useGetUserMutation()
   const user = data?.data
 
+  useEffect(() => {
+    getUser(Number(userId))
+  }, [getUser, userId])
+
   if (isLoading) return <Loader fullPage />
-  if (error || !user) return <ErrorState error="User not found." onRetry={refetch} />
+  if (error || !user) return <ErrorState error="User not found." onRetry={() => getUser(Number(userId))} />
 
   return (
     <div>

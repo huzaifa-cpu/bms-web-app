@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Form, Row, Col, Badge } from 'react-bootstrap'
 import { BsPlusCircle, BsPencil, BsToggleOn, BsToggleOff, BsEye } from 'react-icons/bs'
 import { useNavigate } from 'react-router-dom'
@@ -8,25 +8,29 @@ import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Pagination } from '../../../core/ui/components/pagination'
 import RbacService from '../../../core/services/rbac_service'
-import { useListGroupsQuery, useToggleGroupActiveMutation } from '../api/socials_api'
+import { useListGroupsMutation, useToggleGroupActiveMutation } from '../api/socials_api'
 
 export default function GroupsListPage() {
   const navigate = useNavigate()
   const canCreate = RbacService.can('GROUPS', 'CREATE')
   const canEdit = RbacService.can('GROUPS', 'UPDATE')
-  const canToggleStatus = RbacService.can('GROUPS', 'UPDATE')
+  const canToggleStatus = RbacService.can('GROUPS', 'ACTIVE_INACTIVE')
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const pageSize = 20
 
   const activeParam = statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined
 
-  const { data, isLoading, error } = useListGroupsQuery({
-    active: activeParam,
-    page: page - 1,
-    size: pageSize,
-  })
+  const [listGroups, { data, isLoading, error }] = useListGroupsMutation()
   const [toggleActive] = useToggleGroupActiveMutation()
+
+  useEffect(() => {
+    listGroups({
+      active: activeParam,
+      page: page - 1,
+      size: pageSize,
+    })
+  }, [activeParam, page, pageSize])
 
   const springPage = data?.data
   const groups = springPage?.content ?? []
@@ -37,6 +41,7 @@ export default function GroupsListPage() {
     try {
       await toggleActive({ groupId, active: !currentActive }).unwrap()
       toast.success(`Group ${!currentActive ? 'activated' : 'deactivated'} successfully.`)
+      listGroups({ active: activeParam, page: page - 1, size: pageSize })
     } catch {
       toast.error('Failed to update group status.')
     }

@@ -1,11 +1,11 @@
 /**
- * Location/Venue types matching backend DTOs
+ * Location types matching backend DTOs
  */
 
 export type ApprovalState = 'PENDING' | 'APPROVED' | 'REJECTED'
 
-/** Matches backend AdminVenueDto */
-export interface VenueDto {
+/** Matches backend AdminLocationDto */
+export interface LocationDto {
   id: number
   deleted: boolean
   createdOn: string

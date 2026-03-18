@@ -8,17 +8,17 @@ import { toast } from 'react-toastify'
 import { BsSearch, BsX } from 'react-icons/bs'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useListSportsQuery } from '../../facilities/api/facilities_api'
-import { useListLocationsQuery } from '../../locations/api/locations_api'
-import { useListConsumersQuery } from '../../consumers/api/consumers_api'
-import { useListGameFormatsQuery, useGetGameQuery, useRescheduleGameMutation } from '../api/socials_api'
+import { useListSportsMutation } from '../../facilities/api/facilities_api'
+import { useListLocationsMutation } from '../../locations/api/locations_api'
+import { useListConsumersMutation } from '../../consumers/api/consumers_api'
+import { useListGameFormatsMutation, useGetGameMutation, useRescheduleGameMutation } from '../api/socials_api'
 
 const schema = z.object({
   title: z.string().min(2, 'Title is required'),
   organizerUserId: z.number().min(1, 'Organizer is required'),
   sportId: z.number().min(1, 'Sport is required'),
   gameFormat: z.string().min(1, 'Game format is required'),
-  venueId: z.number().min(1, 'Location is required'),
+  locationId: z.number().min(1, 'Location is required'),
   gameDate: z.string().min(1, 'Date is required').refine((date) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -39,7 +39,7 @@ export default function GameReschedulePage() {
   const navigate = useNavigate()
 
   // Fetch game data
-  const { data: gameData, isLoading: gameLoading, error: gameError, refetch } = useGetGameQuery(Number(gameId))
+  const [getGame, { data: gameData, isLoading: gameLoading, error: gameError }] = useGetGameMutation()
   const game = gameData?.data
 
   // Organizer search state
@@ -54,23 +54,35 @@ export default function GameReschedulePage() {
   const [locationDropdownOpen, setLocationDropdownOpen] = useState(false)
   const [locationSearch, setLocationSearch] = useState('')
 
-  // API queries
-  const { data: sportsData, isLoading: sportsLoading } = useListSportsQuery()
+  // API mutations
+  const [listSports, { data: sportsData, isLoading: sportsLoading }] = useListSportsMutation()
   const sports = sportsData?.data ?? []
 
-  const { data: formatsData, isLoading: formatsLoading } = useListGameFormatsQuery()
+  const [listGameFormats, { data: formatsData, isLoading: formatsLoading }] = useListGameFormatsMutation()
   const formats = formatsData?.data ?? []
 
-  const { data: locationsData, isLoading: locationsLoading } = useListLocationsQuery({ size: 100 })
+  const [listLocations, { data: locationsData, isLoading: locationsLoading }] = useListLocationsMutation()
   const locations = locationsData?.data?.content ?? []
 
-  const { data: consumersData, isLoading: consumersLoading } = useListConsumersQuery(
-    { search: organizerSearch, size: 10 },
-    { skip: organizerSearch.length < 3 }
-  )
+  const [listConsumers, { data: consumersData, isLoading: consumersLoading }] = useListConsumersMutation()
   const consumers = consumersData?.data?.content ?? []
 
   const [rescheduleGame, { isLoading: isRescheduling }] = useRescheduleGameMutation()
+
+  // Fetch game, sports, formats, locations on mount
+  useEffect(() => {
+    getGame(Number(gameId))
+    listSports()
+    listGameFormats()
+    listLocations({ size: 100 })
+  }, [gameId])
+
+  // Fetch consumers when search changes
+  useEffect(() => {
+    if (organizerSearch.length >= 3) {
+      listConsumers({ search: organizerSearch, size: 10 })
+    }
+  }, [organizerSearch])
 
   const { register, handleSubmit, formState: { errors }, control, setValue, watch, reset } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -79,7 +91,7 @@ export default function GameReschedulePage() {
       organizerUserId: 0,
       sportId: 0,
       gameFormat: '',
-      venueId: 0,
+      locationId: 0,
       gameDate: '',
       startTime: '',
       endTime: '',
@@ -96,7 +108,7 @@ export default function GameReschedulePage() {
         organizerUserId: game.createdByUserId,
         sportId: game.sportId ?? 0,
         gameFormat: game.gameFormat ?? '',
-        venueId: game.venueId ?? 0,
+        locationId: game.locationId ?? 0,
         gameDate: '', // Clear date for rescheduling
         startTime: game.startTime ?? '',
         endTime: game.endTime ?? '',
@@ -119,8 +131,8 @@ export default function GameReschedulePage() {
   const selectedFormatValue = watch('gameFormat')
   const selectedFormat = formats.find(f => f.value === selectedFormatValue)
 
-  const selectedVenueId = watch('venueId')
-  const selectedVenue = locations.find(l => l.id === selectedVenueId)
+  const selectedLocationId = watch('locationId')
+  const selectedLocation = locations.find(l => l.id === selectedLocationId)
 
   const filteredSports = useMemo(() => {
     if (!sportSearch.trim()) return sports
@@ -156,7 +168,7 @@ export default function GameReschedulePage() {
           organizerUserId: data.organizerUserId,
           sportId: data.sportId,
           gameFormat: data.gameFormat,
-          venueId: data.venueId,
+          locationId: data.locationId,
           gameDate: data.gameDate,
           startTime: data.startTime,
           endTime: data.endTime,
@@ -171,7 +183,7 @@ export default function GameReschedulePage() {
   }
 
   if (gameLoading) return <Loader fullPage />
-  if (gameError || !game) return <ErrorState error="Game not found." onRetry={refetch} />
+  if (gameError || !game) return <ErrorState error="Game not found." onRetry={() => getGame(Number(gameId))} />
   if (game.status !== 'CANCELED') return <ErrorState error="Only cancelled games can be rescheduled." />
 
   return (
@@ -333,16 +345,16 @@ export default function GameReschedulePage() {
             <Form.Group className="mb-3">
               <Form.Label>Location <span className="text-danger">*</span></Form.Label>
               <Controller
-                name="venueId"
+                name="locationId"
                 control={control}
                 render={({ field }) => (
                   <Dropdown show={locationDropdownOpen} onToggle={setLocationDropdownOpen}>
                     <Dropdown.Toggle
-                      variant={errors.venueId ? 'outline-danger' : 'outline-secondary'}
+                      variant={errors.locationId ? 'outline-danger' : 'outline-secondary'}
                       className="w-100 text-start"
                       disabled={locationsLoading}
                     >
-                      {locationsLoading ? <Spinner animation="border" size="sm" /> : selectedVenue ? `${selectedVenue.name}, ${selectedVenue.city}` : 'Select location...'}
+                      {locationsLoading ? <Spinner animation="border" size="sm" /> : selectedLocation ? `${selectedLocation.name}, ${selectedLocation.city}` : 'Select location...'}
                     </Dropdown.Toggle>
                     <Dropdown.Menu className="w-100" style={{ maxHeight: 250, overflowY: 'auto' }}>
                       <div className="px-2 pb-2">
@@ -361,7 +373,7 @@ export default function GameReschedulePage() {
                           key={l.id}
                           active={field.value === l.id}
                           onClick={() => {
-                            setValue('venueId', l.id)
+                            setValue('locationId', l.id)
                             setLocationDropdownOpen(false)
                             setLocationSearch('')
                           }}
@@ -373,7 +385,7 @@ export default function GameReschedulePage() {
                   </Dropdown>
                 )}
               />
-              {errors.venueId && <div className="text-danger small mt-1">{errors.venueId.message}</div>}
+              {errors.locationId && <div className="text-danger small mt-1">{errors.locationId.message}</div>}
             </Form.Group>
 
             <Row>
@@ -419,4 +431,3 @@ export default function GameReschedulePage() {
     </div>
   )
 }
-

@@ -1,7 +1,7 @@
 import { apiSlice } from '../../../core/api/api_slices'
 import type { GenericResponse } from '../../../core/dtos/generic_response'
 import type {
-  VenueDto,
+  LocationDto,
   AdminDecisionRequest,
   ListLocationsParams,
   AdminCreateLocationRequest,
@@ -11,30 +11,32 @@ import type {
 
 export const locationsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    /* ── Approval endpoints ── */
-    listPendingVenues: builder.query<GenericResponse<VenueDto[]>, void>({
-      query: () => '/admin/venues/pending',
-      providesTags: ['Locations'],
+    /* -- Approval endpoints -- */
+    listPendingLocations: builder.mutation<GenericResponse<LocationDto[]>, void>({
+      query: () => ({
+        url: '/admin/locations/pending',
+        method: 'POST',
+      }),
     }),
-    approveVenue: builder.mutation<GenericResponse<VenueDto>, { venueId: number; request?: AdminDecisionRequest }>({
-      query: ({ venueId, request }) => ({
-        url: `/admin/venues/${venueId}/approve`,
+    approveLocation: builder.mutation<GenericResponse<LocationDto>, { locationId: number; request?: AdminDecisionRequest }>({
+      query: ({ locationId, request }) => ({
+        url: `/admin/locations/${locationId}/approve`,
         method: 'POST',
         body: request ?? {},
       }),
       invalidatesTags: ['Locations'],
     }),
-    rejectVenue: builder.mutation<GenericResponse<VenueDto>, { venueId: number; request?: AdminDecisionRequest }>({
-      query: ({ venueId, request }) => ({
-        url: `/admin/venues/${venueId}/reject`,
+    rejectLocation: builder.mutation<GenericResponse<LocationDto>, { locationId: number; request?: AdminDecisionRequest }>({
+      query: ({ locationId, request }) => ({
+        url: `/admin/locations/${locationId}/reject`,
         method: 'POST',
         body: request ?? {},
       }),
       invalidatesTags: ['Locations'],
     }),
 
-    /* ── Location Management CRUD endpoints ── */
-    listLocations: builder.query<GenericResponse<SpringPage<VenueDto>>, ListLocationsParams | void>({
+    /* -- Location Management CRUD endpoints -- */
+    listLocations: builder.mutation<GenericResponse<SpringPage<LocationDto>>, ListLocationsParams | void>({
       query: (params) => {
         const searchParams = new URLSearchParams()
         if (params?.approvalState && params.approvalState.length > 0) {
@@ -43,19 +45,25 @@ export const locationsApi = apiSlice.injectEndpoints({
         if (params?.search) searchParams.set('search', params.search)
         searchParams.set('page', String(params?.page ?? 0))
         searchParams.set('size', String(params?.size ?? 20))
-        return `/admin/locations?${searchParams.toString()}`
+        return {
+          url: `/admin/locations/list?${searchParams.toString()}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Locations'],
     }),
-    getLocation: builder.query<GenericResponse<VenueDto>, number>({
-      query: (id) => `/admin/locations/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Locations', id }],
+    getLocation: builder.mutation<GenericResponse<LocationDto>, number>({
+      query: (id) => ({
+        url: `/admin/locations/${id}/get`,
+        method: 'POST',
+      }),
     }),
-    listLocationsByProvider: builder.query<GenericResponse<VenueDto[]>, number>({
-      query: (providerUserId) => `/admin/locations/by-provider/${providerUserId}`,
-      providesTags: ['Locations'],
+    listLocationsByProvider: builder.mutation<GenericResponse<LocationDto[]>, number>({
+      query: (providerUserId) => ({
+        url: `/admin/locations/by-provider/${providerUserId}`,
+        method: 'POST',
+      }),
     }),
-    createLocation: builder.mutation<GenericResponse<VenueDto>, AdminCreateLocationRequest>({
+    createLocation: builder.mutation<GenericResponse<LocationDto>, AdminCreateLocationRequest>({
       query: (request) => ({
         url: '/admin/locations',
         method: 'POST',
@@ -63,10 +71,10 @@ export const locationsApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Locations'],
     }),
-    updateLocation: builder.mutation<GenericResponse<VenueDto>, { locationId: number; request: AdminUpdateLocationRequest }>({
+    updateLocation: builder.mutation<GenericResponse<LocationDto>, { locationId: number; request: AdminUpdateLocationRequest }>({
       query: ({ locationId, request }) => ({
         url: `/admin/locations/${locationId}`,
-        method: 'PUT',
+        method: 'POST',
         body: request,
       }),
       invalidatesTags: ['Locations'],
@@ -74,7 +82,7 @@ export const locationsApi = apiSlice.injectEndpoints({
     toggleLocationActive: builder.mutation<GenericResponse<null>, { locationId: number; active: boolean }>({
       query: ({ locationId, active }) => ({
         url: `/admin/locations/${locationId}/active`,
-        method: 'PATCH',
+        method: 'POST',
         body: { active },
       }),
       invalidatesTags: ['Locations'],
@@ -83,12 +91,12 @@ export const locationsApi = apiSlice.injectEndpoints({
 })
 
 export const {
-  useListPendingVenuesQuery,
-  useApproveVenueMutation,
-  useRejectVenueMutation,
-  useListLocationsQuery,
-  useGetLocationQuery,
-  useListLocationsByProviderQuery,
+  useListPendingLocationsMutation,
+  useApproveLocationMutation,
+  useRejectLocationMutation,
+  useListLocationsMutation,
+  useGetLocationMutation,
+  useListLocationsByProviderMutation,
   useCreateLocationMutation,
   useUpdateLocationMutation,
   useToggleLocationActiveMutation,

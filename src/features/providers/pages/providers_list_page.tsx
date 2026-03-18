@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Form, InputGroup, Row, Col } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsSearch, BsEye, BsPencil, BsToggleOn, BsToggleOff } from 'react-icons/bs'
@@ -7,7 +7,7 @@ import { EmptyState } from '../../../core/ui/components/empty_state'
 import { Pagination } from '../../../core/ui/components/pagination'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useListProvidersQuery, useToggleProviderStatusMutation } from '../api/providers_api'
+import { useListProvidersMutation, useToggleProviderStatusMutation } from '../api/providers_api'
 import RbacService from '../../../core/services/rbac_service'
 
 export default function ProvidersListPage() {
@@ -19,13 +19,18 @@ export default function ProvidersListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const pageSize = 20
 
-  const { data, isLoading, error, refetch } = useListProvidersQuery({
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    approvalStates: ['APPROVED'],
-    search: search || undefined,
-    page,
-    size: pageSize,
-  })
+  const [listProviders, { data, isLoading, error }] = useListProvidersMutation()
+
+  useEffect(() => {
+    listProviders({
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      approvalStates: ['APPROVED'],
+      search: search || undefined,
+      page,
+      size: pageSize,
+    })
+  }, [statusFilter, search, page])
+
   const springPage = data?.data
   const providers = springPage?.content ?? []
 
@@ -36,13 +41,26 @@ export default function ProvidersListPage() {
     try {
       await toggleStatus({ providerId, status: newStatus }).unwrap()
       toast.success('Provider status updated.')
+      listProviders({
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        approvalStates: ['APPROVED'],
+        search: search || undefined,
+        page,
+        size: pageSize,
+      })
     } catch {
       toast.error('Failed to update provider status.')
     }
   }
 
   if (isLoading) return <Loader fullPage />
-  if (error) return <ErrorState error="Failed to load providers." onRetry={refetch} />
+  if (error) return <ErrorState error="Failed to load providers." onRetry={() => listProviders({
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    approvalStates: ['APPROVED'],
+    search: search || undefined,
+    page,
+    size: pageSize,
+  })} />
 
   return (
     <div>

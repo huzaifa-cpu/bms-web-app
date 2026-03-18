@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Table, Form } from 'react-bootstrap'
 import { BsArrowLeft } from 'react-icons/bs'
@@ -7,43 +7,48 @@ import { StatusBadge } from '../../../core/ui/components/status_badge'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
 import { ConfirmDialog } from '../../../core/ui/components/confirm_dialog'
+import RbacService from '../../../core/services/rbac_service'
 import {
-  useGetSettlementQuery,
-  useGetSettlementItemsQuery,
-  useApproveSettlementMutation,
+  useGetSettlementMutation,
+  useGetSettlementItemsMutation,
   useMarkSettlementPaidMutation,
   useMarkSettlementFailedMutation,
 } from '../api/settlements_api'
 import { formatDate, formatDateTime } from '../../../core/utils/date_utils'
 import { formatCurrency } from '../../../core/utils/number_utils'
 
-type ActionType = 'approve' | 'mark-paid' | 'mark-failed' | null
+type ActionType = 'mark-paid' | 'mark-failed' | null
 
 export default function SettlementDetailPage() {
   const { settlementId } = useParams()
   const navigate = useNavigate()
   const id = Number(settlementId)
 
-  const { data, isLoading, error, refetch } = useGetSettlementQuery(id)
-  const { data: itemsData } = useGetSettlementItemsQuery(id)
-  const [approve, { isLoading: isApproving }] = useApproveSettlementMutation()
+  const [getSettlement, { data, isLoading, error }] = useGetSettlementMutation()
+  const [getSettlementItems, { data: itemsData }] = useGetSettlementItemsMutation()
   const [markPaid, { isLoading: isMarkingPaid }] = useMarkSettlementPaidMutation()
   const [markFailed, { isLoading: isMarkingFailed }] = useMarkSettlementFailedMutation()
 
   const [activeAction, setActiveAction] = useState<ActionType>(null)
   const [failReason, setFailReason] = useState('')
 
+  useEffect(() => {
+    getSettlement(id)
+    getSettlementItems(id)
+  }, [id])
+
   const settlement = data?.data
   const items = itemsData?.data ?? settlement?.items ?? []
+
+  // RBAC permission checks
+  const canMarkPaid = RbacService.can('SETTLEMENTS', 'MARK_PAID')
+  const canMarkFailed = RbacService.can('SETTLEMENTS', 'MARK_FAILED')
 
   const handleConfirm = async () => {
     if (!settlement) return
     if (activeAction === 'mark-failed' && failReason.trim() === '') return
     try {
-      if (activeAction === 'approve') {
-        await approve(settlement.id).unwrap()
-        toast.success('Settlement approved successfully.')
-      } else if (activeAction === 'mark-paid') {
+      if (activeAction === 'mark-paid') {
         await markPaid(settlement.id).unwrap()
         toast.success('Settlement marked as paid.')
       } else if (activeAction === 'mark-failed') {
@@ -60,12 +65,11 @@ export default function SettlementDetailPage() {
   }
 
   if (isLoading) return <Loader fullPage />
-  if (error || !settlement) return <ErrorState error="Settlement not found." onRetry={refetch} />
+  if (error || !settlement) return <ErrorState error="Settlement not found." onRetry={() => getSettlement(id)} />
 
   const status = settlement.status
-  const showApprove = status === 'PENDING'
-  const showMarkPaid = status === 'APPROVED'
-  const showMarkFailed = status === 'PENDING' || status === 'APPROVED'
+  const showMarkPaid = status === 'APPROVED' && canMarkPaid
+  const showMarkFailed = (status === 'PENDING' || status === 'APPROVED') && canMarkFailed
 
   return (
     <div>
@@ -76,11 +80,6 @@ export default function SettlementDetailPage() {
         <h4 className="fw-bold mb-0">Settlement #{settlement.id}</h4>
         <StatusBadge status={status.toLowerCase()} />
         <div className="ms-auto d-flex gap-2">
-          {showApprove && (
-            <Button variant="success" size="sm" onClick={() => setActiveAction('approve')}>
-              Approve
-            </Button>
-          )}
           {showMarkPaid && (
             <Button variant="success" size="sm" onClick={() => setActiveAction('mark-paid')}>
               Mark Paid
@@ -162,17 +161,6 @@ export default function SettlementDetailPage() {
         </Card.Body>
       </Card>
 
-      {/* Approve Dialog */}
-      <ConfirmDialog
-        show={activeAction === 'approve'}
-        title="Approve Settlement"
-        message="Are you sure you want to approve this settlement?"
-        confirmLabel="Approve"
-        variant="primary"
-        isLoading={isApproving}
-        onConfirm={handleConfirm}
-        onCancel={() => setActiveAction(null)}
-      />
 
       {/* Mark Paid Dialog */}
       <ConfirmDialog

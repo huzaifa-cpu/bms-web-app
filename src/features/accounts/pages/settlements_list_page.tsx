@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Form, Row, Col } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsEye } from 'react-icons/bs'
@@ -9,9 +9,10 @@ import { StatusBadge } from '../../../core/ui/components/status_badge'
 import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { ConfirmDialog } from '../../../core/ui/components/confirm_dialog'
+import RbacService from '../../../core/services/rbac_service'
 import {
-  useListSettlementsQuery,
-  useGetSettlementSummaryQuery,
+  useListSettlementsMutation,
+  useGetSettlementSummaryMutation,
   useGenerateCommissionMutation,
   useGeneratePeriodMutation,
 } from '../api/settlements_api'
@@ -26,6 +27,10 @@ export default function SettlementsListPage() {
   const [confirmAction, setConfirmAction] = useState<'commission' | 'period' | null>(null)
   const pageSize = 20
 
+  // RBAC permission checks
+  const canView = RbacService.can('SETTLEMENTS', 'VIEW')
+  const canGenerate = RbacService.can('SETTLEMENTS', 'GENERATE')
+
   const queryParams = {
     ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
     ...(typeFilter !== 'all' ? { type: typeFilter } : {}),
@@ -33,10 +38,18 @@ export default function SettlementsListPage() {
     size: pageSize,
   }
 
-  const { data, isLoading, error, refetch } = useListSettlementsQuery(queryParams)
-  const { data: summaryData } = useGetSettlementSummaryQuery()
+  const [listSettlements, { data, isLoading, error }] = useListSettlementsMutation()
+  const [getSettlementSummary, { data: summaryData }] = useGetSettlementSummaryMutation()
   const [generateCommission, { isLoading: isGeneratingCommission }] = useGenerateCommissionMutation()
   const [generatePeriod, { isLoading: isGeneratingPeriod }] = useGeneratePeriodMutation()
+
+  useEffect(() => {
+    listSettlements(queryParams)
+  }, [page, statusFilter, typeFilter])
+
+  useEffect(() => {
+    getSettlementSummary()
+  }, [])
 
   const pageData = data?.data
   const settlements = pageData?.content ?? []
@@ -61,20 +74,22 @@ export default function SettlementsListPage() {
   }
 
   if (isLoading) return <Loader fullPage />
-  if (error) return <ErrorState error="Failed to load settlements." onRetry={refetch} />
+  if (error) return <ErrorState error="Failed to load settlements." onRetry={() => listSettlements(queryParams)} />
 
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 className="fw-bold mb-0">Settlements</h4>
-        <div className="d-flex gap-2">
-          <Button variant="outline-primary" size="sm" onClick={() => setConfirmAction('commission')}>
-            Generate Commission
-          </Button>
-          <Button variant="outline-primary" size="sm" onClick={() => setConfirmAction('period')}>
-            Generate Period
-          </Button>
-        </div>
+        {canGenerate && (
+          <div className="d-flex gap-2">
+            <Button variant="outline-primary" size="sm" onClick={() => setConfirmAction('commission')}>
+              Generate Commission
+            </Button>
+            <Button variant="outline-primary" size="sm" onClick={() => setConfirmAction('period')}>
+              Generate Period
+            </Button>
+          </div>
+        )}
       </div>
 
       {summary && (
@@ -161,9 +176,11 @@ export default function SettlementsListPage() {
                       <td><StatusBadge status={s.status.toLowerCase()} /></td>
                       <td>{formatDateTime(s.createdOn)}</td>
                       <td>
-                        <Button size="sm" variant="outline-primary" title="View" onClick={() => navigate(`/accounts/settlements/${s.id}`)}>
-                          <BsEye />
-                        </Button>
+                        {canView && (
+                          <Button size="sm" variant="outline-primary" title="View" onClick={() => navigate(`/accounts/settlements/${s.id}`)}>
+                            <BsEye />
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -9,7 +9,7 @@ import { toast } from 'react-toastify'
 import AuthService from '../../../core/services/auth_service'
 import { ROUTES } from '../../../core/constants/routes'
 import { useLoginMutation } from '../api/auth_api'
-import { useLazyGetProfileQuery } from '../../profile/api/profile_api'
+import { useGetProfileMutation } from '../../profile/api/profile_api'
 import { getDeviceId } from '../../../core/utils/device_utils'
 import { mapToAppError } from '../../../core/errors/error_mapper'
 
@@ -23,7 +23,7 @@ type LoginForm = z.infer<typeof schema>
 export default function LoginPage() {
   const navigate = useNavigate()
   const [login, { isLoading, isSuccess, isError, error, data, reset }] = useLoginMutation()
-  const [fetchProfile] = useLazyGetProfileQuery()
+  const [fetchProfile] = useGetProfileMutation()
   const [showPassword, setShowPassword] = useState(false)
 
   const {

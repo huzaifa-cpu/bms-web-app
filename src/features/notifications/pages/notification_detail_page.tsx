@@ -1,8 +1,9 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Badge, Spinner } from 'react-bootstrap'
 import { BsArrowLeft } from 'react-icons/bs'
 import { ErrorState } from '../../../core/ui/components/error_state'
-import { useGetNotificationQuery } from '../api/notifications_api'
+import { useGetNotificationMutation } from '../api/notifications_api'
 
 const statusBadge = (status: string) => {
   switch (status) {
@@ -17,7 +18,11 @@ const statusBadge = (status: string) => {
 export default function NotificationDetailPage() {
   const { notificationId } = useParams()
   const navigate = useNavigate()
-  const { data: notification, isLoading, isError } = useGetNotificationQuery(Number(notificationId))
+  const [getNotification, { data: notification, isLoading, isError }] = useGetNotificationMutation()
+
+  useEffect(() => {
+    getNotification(Number(notificationId))
+  }, [notificationId])
 
   if (isLoading) {
     return <div className="text-center py-5"><Spinner animation="border" /></div>

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
-import { useGetPlanQuery, useCreatePlanMutation, useUpdatePlanMutation, useGetPlanMetadataQuery } from '../api/subscriptions_api'
+import { useGetPlanMutation, useCreatePlanMutation, useUpdatePlanMutation, useGetPlanMetadataMutation } from '../api/subscriptions_api'
 import type { PlanType, BillingPeriod } from '../api/subscriptions_types'
 
 const baseSchema = z.object({
@@ -46,14 +47,22 @@ export default function PlanFormPage() {
   const isEdit = !!planId
 
   // Fetch metadata
-  const { data: metadataData, isLoading: metadataLoading, error: metadataError } = useGetPlanMetadataQuery()
+  const [getPlanMetadata, { data: metadataData, isLoading: metadataLoading, error: metadataError }] = useGetPlanMetadataMutation()
   const metadata = metadataData?.data
 
-  const { data, isLoading, error } = useGetPlanQuery(Number(planId), { skip: !isEdit })
+  const [getPlan, { data, isLoading, error }] = useGetPlanMutation()
   const existing = data?.data
 
   const [createPlan] = useCreatePlanMutation()
   const [updatePlan] = useUpdatePlanMutation()
+
+  useEffect(() => {
+    getPlanMetadata()
+  }, [])
+
+  useEffect(() => {
+    if (isEdit) getPlan(Number(planId))
+  }, [isEdit, planId])
 
   const defaultPlanType = metadata?.planTypes?.[0]?.value ?? 'PERIOD_BASED'
   const defaultBillingPeriod = metadata?.billingPeriods?.[0]?.value ?? 'MONTHLY'

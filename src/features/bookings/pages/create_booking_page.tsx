@@ -4,9 +4,9 @@ import { useNavigate } from 'react-router-dom'
 import { BsSearch, BsArrowLeft, BsCheckCircle, BsChevronDown } from 'react-icons/bs'
 import { toast } from 'react-toastify'
 import { ROUTES } from '../../../core/constants/routes'
-import { useListProvidersQuery } from '../../providers/api/providers_api'
-import { useListFacilitiesQuery } from '../../facilities/api/facilities_api'
-import { useListConsumersQuery } from '../../consumers/api/consumers_api'
+import { useListLocationsMutation } from '../../locations/api/locations_api'
+import { useListFacilitiesByLocationMutation } from '../../facilities/api/facilities_api'
+import { useListConsumersMutation } from '../../consumers/api/consumers_api'
 import { useCreateWalkInBookingMutation } from '../api/bookings_api'
 
 const TIME_OPTIONS = Array.from({ length: 24 }, (_, i) => {
@@ -17,12 +17,12 @@ const TIME_OPTIONS = Array.from({ length: 24 }, (_, i) => {
 export default function CreateBookingPage() {
   const navigate = useNavigate()
 
-  // Provider search
-  const [providerSearch, setProviderSearch] = useState('')
-  const [showProviderDropdown, setShowProviderDropdown] = useState(false)
-  const [selectedProviderId, setSelectedProviderId] = useState<number | null>(null)
-  const [selectedProviderName, setSelectedProviderName] = useState('')
-  const providerDropdownRef = useRef<HTMLDivElement>(null)
+  // Location search
+  const [locationSearch, setLocationSearch] = useState('')
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false)
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null)
+  const [selectedLocationName, setSelectedLocationName] = useState('')
+  const locationDropdownRef = useRef<HTMLDivElement>(null)
 
   // Facility
   const [facilitySearch, setFacilitySearch] = useState('')
@@ -49,21 +49,35 @@ export default function CreateBookingPage() {
   const [cashPaidNow, setCashPaidNow] = useState(false)
   const [notes, setNotes] = useState('')
 
-  // API queries
-  const { data: providersData } = useListProvidersQuery({ search: providerSearch, page: 0, size: 10, approvalStates: ['APPROVED'] })
-  const { data: facilitiesData } = useListFacilitiesQuery({ search: facilitySearch, page: 0, size: 50, approvalState: ['APPROVED'] })
-  const { data: consumersData } = useListConsumersQuery({ search: consumerSearch, page: 0, size: 10 })
+  // API mutations
+  const [listLocations, { data: locationsData }] = useListLocationsMutation()
+  const [listFacilitiesByLocation, { data: facilitiesData }] = useListFacilitiesByLocationMutation()
+  const [listConsumers, { data: consumersData }] = useListConsumersMutation()
   const [createWalkIn, { isLoading: isSubmitting }] = useCreateWalkInBookingMutation()
 
-  const providers = providersData?.data?.content ?? []
-  const facilities = facilitiesData?.data?.content ?? []
+  useEffect(() => {
+    listLocations({ search: locationSearch || undefined, page: 0, size: 50, approvalState: ['APPROVED'] })
+  }, [locationSearch])
+
+  useEffect(() => {
+    if (selectedLocationId) {
+      listFacilitiesByLocation(selectedLocationId)
+    }
+  }, [selectedLocationId])
+
+  useEffect(() => {
+    listConsumers({ search: consumerSearch, page: 0, size: 10 })
+  }, [consumerSearch])
+
+  const locations = locationsData?.data?.content ?? []
+  const facilities = facilitiesData?.data ?? []
   const consumers = consumersData?.data?.content ?? []
 
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (providerDropdownRef.current && !providerDropdownRef.current.contains(event.target as Node)) {
-        setShowProviderDropdown(false)
+      if (locationDropdownRef.current && !locationDropdownRef.current.contains(event.target as Node)) {
+        setShowLocationDropdown(false)
       }
       if (facilityDropdownRef.current && !facilityDropdownRef.current.contains(event.target as Node)) {
         setShowFacilityDropdown(false)
@@ -78,7 +92,7 @@ export default function CreateBookingPage() {
 
   const isFormValid = () => {
     return (
-      selectedProviderId !== null &&
+      selectedLocationId !== null &&
       selectedFacilityId !== null &&
       selectedDate &&
       startTime &&
@@ -98,7 +112,7 @@ export default function CreateBookingPage() {
 
     try {
       await createWalkIn({
-        providerUserId: selectedProviderId!,
+        locationId: selectedLocationId!,
         facilityId: selectedFacilityId!,
         bookingDate: selectedDate,
         startTime,
@@ -132,59 +146,65 @@ export default function CreateBookingPage() {
         <Card.Body>
           <Form onSubmit={handleSubmit}>
             <Row className="g-3">
-              {/* Provider Selection */}
+              {/* Location Selection */}
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>Provider <span className="text-danger">*</span></Form.Label>
-                  <div ref={providerDropdownRef} className="position-relative">
+                  <Form.Label>Location <span className="text-danger">*</span></Form.Label>
+                  <div ref={locationDropdownRef} className="position-relative">
                     <InputGroup>
                       <InputGroup.Text><BsSearch /></InputGroup.Text>
                       <Form.Control
                         type="text"
-                        placeholder="Search provider..."
-                        value={selectedProviderId ? selectedProviderName : providerSearch}
+                        placeholder="Search location..."
+                        value={selectedLocationId ? selectedLocationName : locationSearch}
                         onChange={e => {
-                          setProviderSearch(e.target.value)
-                          setShowProviderDropdown(true)
-                          if (selectedProviderId) {
-                            setSelectedProviderId(null)
-                            setSelectedProviderName('')
+                          setLocationSearch(e.target.value)
+                          setShowLocationDropdown(true)
+                          if (selectedLocationId) {
+                            setSelectedLocationId(null)
+                            setSelectedLocationName('')
+                            // Reset facility when location changes
+                            setSelectedFacilityId(null)
+                            setSelectedFacilityName('')
                           }
                         }}
-                        onFocus={() => setShowProviderDropdown(true)}
+                        onFocus={() => setShowLocationDropdown(true)}
                       />
-                      <InputGroup.Text style={{ cursor: 'pointer' }} onClick={() => setShowProviderDropdown(!showProviderDropdown)}>
+                      <InputGroup.Text style={{ cursor: 'pointer' }} onClick={() => setShowLocationDropdown(!showLocationDropdown)}>
                         <BsChevronDown />
                       </InputGroup.Text>
                     </InputGroup>
-                    {showProviderDropdown && (
+                    {showLocationDropdown && (
                       <div
                         className="position-absolute w-100 border rounded shadow-sm mt-1"
                         style={{ zIndex: 1000, maxHeight: '200px', overflowY: 'auto', backgroundColor: 'var(--color-surface)' }}
                       >
-                        {providers.length === 0 ? (
-                          <div className="p-2 text-muted text-center">No providers found</div>
+                        {locations.length === 0 ? (
+                          <div className="p-2 text-muted text-center">No locations found</div>
                         ) : (
-                          providers.map(p => (
+                          locations.map(l => (
                             <div
-                              key={p.id}
-                              className={`p-2 ${selectedProviderId === p.id ? 'bg-primary text-white' : ''}`}
+                              key={l.id}
+                              className={`p-2 ${selectedLocationId === l.id ? 'bg-primary text-white' : ''}`}
                               style={{ cursor: 'pointer' }}
                               onClick={() => {
-                                setSelectedProviderId(p.id)
-                                setSelectedProviderName(`${p.businessName || p.name} (${p.name})`)
-                                setShowProviderDropdown(false)
+                                setSelectedLocationId(l.id)
+                                setSelectedLocationName(l.name)
+                                setShowLocationDropdown(false)
+                                // Reset facility when location changes
+                                setSelectedFacilityId(null)
+                                setSelectedFacilityName('')
                               }}
                               onMouseEnter={e => {
-                                if (selectedProviderId !== p.id) e.currentTarget.style.backgroundColor = 'var(--color-bg-page)'
+                                if (selectedLocationId !== l.id) e.currentTarget.style.backgroundColor = 'var(--color-bg-page)'
                               }}
                               onMouseLeave={e => {
-                                if (selectedProviderId !== p.id) e.currentTarget.style.backgroundColor = ''
+                                if (selectedLocationId !== l.id) e.currentTarget.style.backgroundColor = ''
                               }}
                             >
-                              <div className="fw-medium">{p.businessName || p.name}</div>
-                              <small style={{ color: selectedProviderId === p.id ? 'rgba(255,255,255,0.8)' : 'var(--color-text-secondary)' }}>
-                                {p.name} - {p.email}
+                              <div className="fw-medium">{l.name}</div>
+                              <small style={{ color: selectedLocationId === l.id ? 'rgba(255,255,255,0.8)' : 'var(--color-text-secondary)' }}>
+                                {l.city ?? 'N/A'}
                               </small>
                             </div>
                           ))
@@ -204,7 +224,7 @@ export default function CreateBookingPage() {
                       <InputGroup.Text><BsSearch /></InputGroup.Text>
                       <Form.Control
                         type="text"
-                        placeholder="Search facility..."
+                        placeholder={selectedLocationId ? "Search facility..." : "Select location first..."}
                         value={selectedFacilityId ? selectedFacilityName : facilitySearch}
                         onChange={e => {
                           setFacilitySearch(e.target.value)
@@ -214,13 +234,14 @@ export default function CreateBookingPage() {
                             setSelectedFacilityName('')
                           }
                         }}
-                        onFocus={() => setShowFacilityDropdown(true)}
+                        onFocus={() => selectedLocationId && setShowFacilityDropdown(true)}
+                        disabled={!selectedLocationId}
                       />
-                      <InputGroup.Text style={{ cursor: 'pointer' }} onClick={() => setShowFacilityDropdown(!showFacilityDropdown)}>
+                      <InputGroup.Text style={{ cursor: 'pointer' }} onClick={() => selectedLocationId && setShowFacilityDropdown(!showFacilityDropdown)}>
                         <BsChevronDown />
                       </InputGroup.Text>
                     </InputGroup>
-                    {showFacilityDropdown && (
+                    {showFacilityDropdown && selectedLocationId && (
                       <div
                         className="position-absolute w-100 border rounded shadow-sm mt-1"
                         style={{ zIndex: 1000, maxHeight: '200px', overflowY: 'auto', backgroundColor: 'var(--color-surface)' }}
@@ -228,7 +249,7 @@ export default function CreateBookingPage() {
                         {facilities.filter(f =>
                           !facilitySearch || f.name.toLowerCase().includes(facilitySearch.toLowerCase())
                         ).length === 0 ? (
-                          <div className="p-2 text-muted text-center">No facilities found</div>
+                          <div className="p-2 text-muted text-center">{facilities.length === 0 ? 'No facilities for this location' : 'No facilities found'}</div>
                         ) : (
                           facilities.filter(f =>
                             !facilitySearch || f.name.toLowerCase().includes(facilitySearch.toLowerCase())
@@ -251,7 +272,7 @@ export default function CreateBookingPage() {
                             >
                               <div className="fw-medium">{f.name}</div>
                               <small style={{ color: selectedFacilityId === f.id ? 'rgba(255,255,255,0.8)' : 'var(--color-text-secondary)' }}>
-                                {f.venueName} - {f.sportName}
+                                {f.locationName} - {f.sportName}
                               </small>
                             </div>
                           ))
@@ -416,8 +437,8 @@ export default function CreateBookingPage() {
                     <h6 className="fw-bold mb-2">Booking Summary</h6>
                     <Row>
                       <Col sm={6}>
-                        <small className="text-muted">Provider:</small>
-                        <p className="mb-1">{selectedProviderName}</p>
+                        <small className="text-muted">Location:</small>
+                        <p className="mb-1">{selectedLocationName}</p>
                       </Col>
                       <Col sm={6}>
                         <small className="text-muted">Facility:</small>

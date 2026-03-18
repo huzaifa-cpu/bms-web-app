@@ -1,18 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Badge, Modal, Form } from 'react-bootstrap'
 import { BsArrowLeft, BsCheckCircle, BsXCircle } from 'react-icons/bs'
 import { toast } from 'react-toastify'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetProviderQuery, useApproveProviderMutation, useRejectProviderMutation } from '../../providers/api/providers_api'
+import { useGetProviderMutation, useApproveProviderMutation, useRejectProviderMutation } from '../../providers/api/providers_api'
 import { formatDateTime, formatDate } from '../../../core/utils/date_utils'
 
 export default function ApprovalsProviderDetailPage() {
   const { providerId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetProviderQuery(Number(providerId))
+  const [getProvider, { data, isLoading, error }] = useGetProviderMutation()
+
+  useEffect(() => {
+    getProvider(Number(providerId))
+  }, [providerId])
+
   const provider = data?.data
 
   const [approveProvider, { isLoading: isApproving }] = useApproveProviderMutation()
@@ -42,7 +47,7 @@ export default function ApprovalsProviderDetailPage() {
   }
 
   if (isLoading) return <Loader fullPage />
-  if (error || !provider) return <ErrorState error="Provider not found." onRetry={refetch} />
+  if (error || !provider) return <ErrorState error="Provider not found." onRetry={() => getProvider(Number(providerId))} />
 
   return (
     <div>
@@ -161,4 +166,3 @@ export default function ApprovalsProviderDetailPage() {
     </div>
   )
 }
-

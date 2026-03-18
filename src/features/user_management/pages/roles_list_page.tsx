@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Badge, Form, Row, Col, InputGroup } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsSearch, BsPlusCircle, BsPencil, BsToggleOn, BsToggleOff } from 'react-icons/bs'
@@ -6,7 +6,7 @@ import { toast } from 'react-toastify'
 import { EmptyState } from '../../../core/ui/components/empty_state'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useListRolesQuery, useToggleRoleStatusMutation } from '../api/roles_api'
+import { useListRolesMutation, useToggleRoleStatusMutation } from '../api/roles_api'
 import RbacService from '../../../core/services/rbac_service'
 
 export default function RolesListPage() {
@@ -18,16 +18,21 @@ export default function RolesListPage() {
   const [roleTypeFilter, setRoleTypeFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
-  const { data, isLoading, error, refetch } = useListRolesQuery()
+  const [listRoles, { data, isLoading, error }] = useListRolesMutation()
   const allRoles = data?.data ?? []
 
   const [toggleStatus] = useToggleRoleStatusMutation()
+
+  useEffect(() => {
+    listRoles()
+  }, [listRoles])
 
   const handleToggleStatus = async (roleId: number, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
       await toggleStatus({ roleId, status: newStatus }).unwrap()
       toast.success('Role status updated.')
+      listRoles()
     } catch {
       toast.error('Failed to update role status.')
     }
@@ -41,7 +46,7 @@ export default function RolesListPage() {
   })
 
   if (isLoading) return <Loader fullPage />
-  if (error) return <ErrorState error="Failed to load roles." onRetry={refetch} />
+  if (error) return <ErrorState error="Failed to load roles." onRetry={() => listRoles()} />
 
   return (
     <div>

@@ -6,7 +6,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import RbacService from '../../../core/services/rbac_service'
 import { Loader } from '../../../core/ui/components/loader'
-import { useLazyGenerateReportQuery } from '../api/reports_api'
+import { useGenerateReportMutation } from '../api/reports_api'
 import type { ReportDataDto } from '../api/reports_types'
 
 function downloadCsv(report: ReportDataDto) {
@@ -82,7 +82,7 @@ function downloadPdf(report: ReportDataDto) {
 export default function ReportsPage() {
   const canExport = RbacService.can('REPORTS', 'EXPORT')
   const [reportType, setReportType] = useState('')
-  const [trigger, { data, isLoading, error }] = useLazyGenerateReportQuery()
+  const [trigger, { data, isLoading, error }] = useGenerateReportMutation()
 
   const report = data?.data
 

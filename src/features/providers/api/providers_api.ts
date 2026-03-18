@@ -12,14 +12,18 @@ import type {
 
 export const providersApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    /* ── Onboarding / Approval endpoints ── */
-    listPendingProviders: builder.query<GenericResponse<ProviderOnboardingRequestDto[]>, void>({
-      query: () => '/admin/provider/onboarding/pending',
-      providesTags: ['Providers'],
+    /* -- Onboarding / Approval endpoints -- */
+    listPendingProviders: builder.mutation<GenericResponse<ProviderOnboardingRequestDto[]>, void>({
+      query: () => ({
+        url: '/admin/provider/onboarding/pending',
+        method: 'POST',
+      }),
     }),
-    getProviderOnboarding: builder.query<GenericResponse<ProviderOnboardingRequestDto>, number>({
-      query: (id) => `/admin/provider/onboarding/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Providers', id }],
+    getProviderOnboarding: builder.mutation<GenericResponse<ProviderOnboardingRequestDto>, number>({
+      query: (id) => ({
+        url: `/admin/provider/onboarding/${id}`,
+        method: 'POST',
+      }),
     }),
     reviewProviderOnboarding: builder.mutation<GenericResponse<ProviderOnboardingRequestDto>, AdminReviewOnboardingRequest>({
       query: (request) => ({
@@ -29,13 +33,15 @@ export const providersApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Providers'],
     }),
-    getProviderReviewLogs: builder.query<GenericResponse<ProviderOnboardingReviewLogDto[]>, number>({
-      query: (id) => `/admin/provider/onboarding/${id}/review-logs`,
-      providesTags: (_result, _error, id) => [{ type: 'Providers', id }],
+    getProviderReviewLogs: builder.mutation<GenericResponse<ProviderOnboardingReviewLogDto[]>, number>({
+      query: (id) => ({
+        url: `/admin/provider/onboarding/${id}/review-logs`,
+        method: 'POST',
+      }),
     }),
 
-    /* ── Provider Management CRUD endpoints ── */
-    listProviders: builder.query<GenericResponse<SpringPage<AdminProviderDto>>, ListProvidersParams | void>({
+    /* -- Provider Management CRUD endpoints -- */
+    listProviders: builder.mutation<GenericResponse<SpringPage<AdminProviderDto>>, ListProvidersParams | void>({
       query: (params) => {
         const searchParams = new URLSearchParams()
         if (params?.status) searchParams.set('status', params.status)
@@ -45,13 +51,17 @@ export const providersApi = apiSlice.injectEndpoints({
         if (params?.search) searchParams.set('search', params.search)
         searchParams.set('page', String(params?.page ?? 0))
         searchParams.set('size', String(params?.size ?? 20))
-        return `/admin/providers?${searchParams.toString()}`
+        return {
+          url: `/admin/providers?${searchParams.toString()}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Providers'],
     }),
-    getProvider: builder.query<GenericResponse<AdminProviderDto>, number>({
-      query: (id) => `/admin/providers/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Providers', id }],
+    getProvider: builder.mutation<GenericResponse<AdminProviderDto>, number>({
+      query: (id) => ({
+        url: `/admin/providers/${id}/get`,
+        method: 'POST',
+      }),
     }),
     updateProvider: builder.mutation<GenericResponse<AdminProviderDto>, { providerId: number; request: AdminUpdateProviderRequest; cnicFront?: File; cnicBack?: File }>({
       query: ({ providerId, request, cnicFront, cnicBack }) => {
@@ -65,7 +75,7 @@ export const providersApi = apiSlice.injectEndpoints({
         }
         return {
           url: `/admin/providers/${providerId}`,
-          method: 'PUT',
+          method: 'POST',
           body,
         }
       },
@@ -74,7 +84,7 @@ export const providersApi = apiSlice.injectEndpoints({
     toggleProviderStatus: builder.mutation<GenericResponse<null>, { providerId: number; status: string }>({
       query: ({ providerId, status }) => ({
         url: `/admin/providers/${providerId}/status`,
-        method: 'PATCH',
+        method: 'POST',
         body: { status },
       }),
       invalidatesTags: ['Providers'],
@@ -99,12 +109,12 @@ export const providersApi = apiSlice.injectEndpoints({
 })
 
 export const {
-  useListPendingProvidersQuery,
-  useGetProviderOnboardingQuery,
+  useListPendingProvidersMutation,
+  useGetProviderOnboardingMutation,
   useReviewProviderOnboardingMutation,
-  useGetProviderReviewLogsQuery,
-  useListProvidersQuery,
-  useGetProviderQuery,
+  useGetProviderReviewLogsMutation,
+  useListProvidersMutation,
+  useGetProviderMutation,
   useUpdateProviderMutation,
   useToggleProviderStatusMutation,
   useApproveProviderMutation,

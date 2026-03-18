@@ -1,10 +1,11 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Badge } from 'react-bootstrap'
 import { BsArrowLeft, BsPencil } from 'react-icons/bs'
 import { StatusBadge } from '../../../core/ui/components/status_badge'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetLocationQuery } from '../api/locations_api'
+import { useGetLocationMutation } from '../api/locations_api'
 import RbacService from '../../../core/services/rbac_service'
 
 export default function LocationDetailPage() {
@@ -12,11 +13,16 @@ export default function LocationDetailPage() {
   const navigate = useNavigate()
   const canEdit = RbacService.can('LOCATIONS', 'UPDATE')
 
-  const { data, isLoading, error, refetch } = useGetLocationQuery(Number(locationId))
+  const [getLocation, { data, isLoading, error }] = useGetLocationMutation()
+
+  useEffect(() => {
+    getLocation(Number(locationId))
+  }, [locationId])
+
   const location = data?.data
 
   if (isLoading) return <Loader fullPage />
-  if (error || !location) return <ErrorState error="Location not found." onRetry={refetch} />
+  if (error || !location) return <ErrorState error="Location not found." onRetry={() => getLocation(Number(locationId))} />
 
   return (
     <div>

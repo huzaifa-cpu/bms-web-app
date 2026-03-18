@@ -1,19 +1,24 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Badge } from 'react-bootstrap'
 import { BsArrowLeft } from 'react-icons/bs'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetEmployeeQuery } from '../api/employees_api'
+import { useGetEmployeeMutation } from '../api/employees_api'
 
 export default function EmployeeDetailPage() {
   const { employeeId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetEmployeeQuery(Number(employeeId))
+  const [getEmployee, { data, isLoading, error }] = useGetEmployeeMutation()
   const employee = data?.data
 
+  useEffect(() => {
+    getEmployee(Number(employeeId))
+  }, [employeeId])
+
   if (isLoading) return <Loader fullPage />
-  if (error || !employee) return <ErrorState error="Employee not found." onRetry={refetch} />
+  if (error || !employee) return <ErrorState error="Employee not found." onRetry={() => getEmployee(Number(employeeId))} />
 
   return (
     <div>

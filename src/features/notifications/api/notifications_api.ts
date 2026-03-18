@@ -18,9 +18,10 @@ export const notificationsApi = apiSlice.injectEndpoints({
       invalidatesTags: ['Notifications'],
     }),
 
-    listNotificationHistory: builder.query<SpringPage<NotificationDto>, ListNotificationHistoryParams>({
+    listNotificationHistory: builder.mutation<SpringPage<NotificationDto>, ListNotificationHistoryParams>({
       query: (params) => ({
         url: '/admin/notifications/history',
+        method: 'POST',
         params: {
           ...(params.status && { status: params.status }),
           ...(params.channel && { channel: params.channel }),
@@ -29,19 +30,20 @@ export const notificationsApi = apiSlice.injectEndpoints({
         },
       }),
       transformResponse: (response: GenericResponse<SpringPage<NotificationDto>>) => response.data,
-      providesTags: ['Notifications'],
     }),
 
-    getNotification: builder.query<NotificationDto, number>({
-      query: (id) => `/admin/notifications/history/${id}`,
+    getNotification: builder.mutation<NotificationDto, number>({
+      query: (id) => ({
+        url: `/admin/notifications/history/${id}`,
+        method: 'POST',
+      }),
       transformResponse: (response: GenericResponse<NotificationDto>) => response.data,
-      providesTags: ['Notifications'],
     }),
   }),
 })
 
 export const {
   useBroadcastNotificationMutation,
-  useListNotificationHistoryQuery,
-  useGetNotificationQuery,
+  useListNotificationHistoryMutation,
+  useGetNotificationMutation,
 } = notificationsApi

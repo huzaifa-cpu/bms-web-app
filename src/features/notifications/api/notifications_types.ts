@@ -4,7 +4,7 @@
 
 export type NotificationType = 'GENERAL' | 'BOOKING' | 'PAYMENT' | 'DISPUTE' | 'SUBSCRIPTION' | 'SYSTEM'
 
-export type ReferenceType = 'NONE' | 'BOOKING' | 'PAYMENT' | 'DISPUTE' | 'VENUE' | 'FACILITY'
+export type ReferenceType = 'NONE' | 'BOOKING' | 'PAYMENT' | 'DISPUTE' | 'LOCATION' | 'FACILITY'
 
 export type NotificationStatus = 'QUEUED' | 'SENT' | 'FAILED' | 'CANCELED'
 

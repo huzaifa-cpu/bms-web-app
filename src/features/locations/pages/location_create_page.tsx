@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, Form, Button, Row, Col, Dropdown, InputGroup, Spinner } from 'react-bootstrap'
 import { BsArrowLeft, BsSearch } from 'react-icons/bs'
@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'react-toastify'
 import { useCreateLocationMutation } from '../api/locations_api'
-import { useListProvidersQuery } from '../../providers/api/providers_api'
+import { useListProvidersMutation } from '../../providers/api/providers_api'
 
 const PAKISTAN_CITIES = [
   'Karachi', 'Lahore', 'Faisalabad', 'Rawalpindi', 'Multan',
@@ -26,8 +26,12 @@ export default function LocationCreatePage() {
   const navigate = useNavigate()
   const [createLocation, { isLoading: isSaving }] = useCreateLocationMutation()
 
-  const { data: providersData, isLoading: providersLoading } = useListProvidersQuery({ size: 100, approvalStates: ['APPROVED'] })
+  const [listProviders, { data: providersData, isLoading: providersLoading }] = useListProvidersMutation()
   const providers = providersData?.data?.content ?? []
+
+  useEffect(() => {
+    listProviders({ size: 100, approvalStates: ['APPROVED'] })
+  }, [])
 
   const [providerSearch, setProviderSearch] = useState('')
   const [providerDropdownOpen, setProviderDropdownOpen] = useState(false)
@@ -171,4 +175,3 @@ export default function LocationCreatePage() {
     </div>
   )
 }
-

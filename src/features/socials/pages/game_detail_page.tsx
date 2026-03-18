@@ -1,15 +1,20 @@
+import { useEffect } from 'react'
 import { Card, Row, Col, Badge, Button } from 'react-bootstrap'
 import { useParams, useNavigate } from 'react-router-dom'
 import { BsArrowLeft, BsCalendar, BsClock, BsGeoAlt, BsPeople, BsTrophy, BsPersonFill } from 'react-icons/bs'
 import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
-import { useGetGameQuery } from '../api/socials_api'
+import { useGetGameMutation } from '../api/socials_api'
 
 export default function GameDetailPage() {
   const { gameId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetGameQuery(Number(gameId))
+  const [getGame, { data, isLoading, error }] = useGetGameMutation()
+
+  useEffect(() => {
+    getGame(Number(gameId))
+  }, [gameId])
 
   const game = data?.data
 
@@ -27,7 +32,7 @@ export default function GameDetailPage() {
   }
 
   if (isLoading) return <Loader />
-  if (error || !game) return <ErrorState error="Game not found." onRetry={refetch} />
+  if (error || !game) return <ErrorState error="Game not found." onRetry={() => getGame(Number(gameId))} />
 
   return (
     <div>
@@ -74,7 +79,7 @@ export default function GameDetailPage() {
                     <BsGeoAlt />
                     <span>Location</span>
                   </div>
-                  <p className="mb-0 fw-semibold">{game.venueName ?? '-'}</p>
+                  <p className="mb-0 fw-semibold">{game.locationName ?? '-'}</p>
                   {game.city && <small className="text-muted">{game.city}</small>}
                 </Col>
                 <Col md={6}>

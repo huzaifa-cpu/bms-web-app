@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { BsArrowLeft, BsCamera } from 'react-icons/bs'
 import { toast } from 'react-toastify'
 import { ROUTES } from '../../../core/constants/routes'
-import { useGetSportQuery, useCreateSportMutation, useUpdateSportMutation } from '../api/sports_api'
+import { useGetSportMutation, useCreateSportMutation, useUpdateSportMutation } from '../api/sports_api'
 
 const sportSchema = z.object({
   name: z.string()
@@ -28,11 +28,13 @@ export default function SportFormPage() {
   const [imageError, setImageError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { data: sportData, isLoading: isLoadingSport } = useGetSportQuery(Number(sportId), {
-    skip: !isEditMode,
-  })
+  const [getSport, { data: sportData, isLoading: isLoadingSport }] = useGetSportMutation()
   const [createSport, { isLoading: isCreating }] = useCreateSportMutation()
   const [updateSport, { isLoading: isUpdating }] = useUpdateSportMutation()
+
+  useEffect(() => {
+    if (isEditMode) getSport(Number(sportId))
+  }, [isEditMode, sportId])
 
   const sport = sportData?.data
 

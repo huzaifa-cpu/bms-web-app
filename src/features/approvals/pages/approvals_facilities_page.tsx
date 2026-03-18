@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Badge, Modal, Form } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsEye } from 'react-icons/bs'
@@ -8,18 +8,22 @@ import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Pagination } from '../../../core/ui/components/pagination'
 import { StatusBadge } from '../../../core/ui/components/status_badge'
-import { useListFacilitiesQuery, useApproveFacilityMutation, useRejectFacilityMutation } from '../../facilities/api/facilities_api'
+import { useListFacilitiesMutation, useApproveFacilityMutation, useRejectFacilityMutation } from '../../facilities/api/facilities_api'
 
 export default function ApprovalsFacilitiesPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const pageSize = 20
 
-  const { data, isLoading, error, refetch } = useListFacilitiesQuery({
-    approvalState: ['PENDING', 'REJECTED'],
-    page: page - 1,
-    size: pageSize,
-  })
+  const [listFacilities, { data, isLoading, error }] = useListFacilitiesMutation()
+
+  useEffect(() => {
+    listFacilities({
+      approvalState: ['PENDING', 'REJECTED'],
+      page: page - 1,
+      size: pageSize,
+    })
+  }, [page])
 
   const [_approveFacility, { isLoading: _isApproving }] = useApproveFacilityMutation()
   const [rejectFacility, { isLoading: isRejecting }] = useRejectFacilityMutation()
@@ -45,7 +49,11 @@ export default function ApprovalsFacilitiesPage() {
   }
 
   if (isLoading) return <Loader />
-  if (error) return <ErrorState error="Failed to load pending facilities." onRetry={refetch} />
+  if (error) return <ErrorState error="Failed to load pending facilities." onRetry={() => listFacilities({
+    approvalState: ['PENDING', 'REJECTED'],
+    page: page - 1,
+    size: pageSize,
+  })} />
 
   return (
     <div>
@@ -76,7 +84,7 @@ export default function ApprovalsFacilitiesPage() {
                     <tr key={f.id}>
                       <td>{f.name}</td>
                       <td>{f.sportName ?? '—'}</td>
-                      <td>{f.venueName ?? '—'}</td>
+                      <td>{f.locationName ?? '—'}</td>
                       <td><StatusBadge status={f.state.toLowerCase()} /></td>
                       <td><Badge bg={f.active ? 'success' : 'secondary'}>{f.active ? 'Active' : 'Inactive'}</Badge></td>
                       <td>
@@ -121,4 +129,3 @@ export default function ApprovalsFacilitiesPage() {
     </div>
   )
 }
-

@@ -44,8 +44,8 @@ export interface GameDto {
   gameDate?: string
   startTime?: string
   endTime?: string
-  venueId?: number
-  venueName?: string
+  locationId?: number
+  locationName?: string
   facilityId?: number
   bookingId?: number
   city?: string
@@ -61,7 +61,7 @@ export interface CreateGameRequest {
   organizerUserId: number
   sportId: number
   gameFormat: string
-  venueId: number
+  locationId: number
   gameDate: string
   startTime: string
   endTime?: string

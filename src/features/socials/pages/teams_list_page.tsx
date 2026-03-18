@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Form, Row, Col, Badge } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsPlusCircle, BsPencil, BsToggleOn, BsToggleOff } from 'react-icons/bs'
@@ -8,25 +8,29 @@ import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Pagination } from '../../../core/ui/components/pagination'
 import RbacService from '../../../core/services/rbac_service'
-import { useListTeamsQuery, useToggleTeamActiveMutation } from '../api/socials_api'
+import { useListTeamsMutation, useToggleTeamActiveMutation } from '../api/socials_api'
 
 export default function TeamsListPage() {
   const navigate = useNavigate()
   const canCreate = RbacService.can('TEAMS', 'CREATE')
   const canEdit = RbacService.can('TEAMS', 'UPDATE')
-  const canToggleStatus = RbacService.can('TEAMS', 'UPDATE')
+  const canToggleStatus = RbacService.can('TEAMS', 'ACTIVE_INACTIVE')
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const pageSize = 20
 
   const activeParam = statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined
 
-  const { data, isLoading, error } = useListTeamsQuery({
-    active: activeParam,
-    page: page - 1,
-    size: pageSize,
-  })
+  const [listTeams, { data, isLoading, error }] = useListTeamsMutation()
   const [toggleActive] = useToggleTeamActiveMutation()
+
+  useEffect(() => {
+    listTeams({
+      active: activeParam,
+      page: page - 1,
+      size: pageSize,
+    })
+  }, [activeParam, page, pageSize])
 
   const springPage = data?.data
   const teams = springPage?.content ?? []
@@ -37,6 +41,7 @@ export default function TeamsListPage() {
     try {
       await toggleActive({ teamId, active: !currentActive }).unwrap()
       toast.success('Team status updated.')
+      listTeams({ active: activeParam, page: page - 1, size: pageSize })
     } catch {
       toast.error('Failed to update team status.')
     }

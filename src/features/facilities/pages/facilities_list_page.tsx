@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Badge, Form, InputGroup, Row, Col } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsSearch, BsEye, BsPencil, BsToggleOn, BsToggleOff, BsPlusCircle } from 'react-icons/bs'
@@ -8,7 +8,7 @@ import { Pagination } from '../../../core/ui/components/pagination'
 import { StatusBadge } from '../../../core/ui/components/status_badge'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useListFacilitiesQuery, useToggleFacilityActiveMutation } from '../api/facilities_api'
+import { useListFacilitiesMutation, useToggleFacilityActiveMutation } from '../api/facilities_api'
 import RbacService from '../../../core/services/rbac_service'
 
 export default function FacilitiesListPage() {
@@ -20,14 +20,18 @@ export default function FacilitiesListPage() {
   const [page, setPage] = useState(0)
   const pageSize = 20
 
-  const { data, isLoading, error, refetch } = useListFacilitiesQuery({
-    approvalState: ['APPROVED'],
-    search: search || undefined,
-    page,
-    size: pageSize,
-  })
+  const [listFacilities, { data, isLoading, error }] = useListFacilitiesMutation()
   const springPage = data?.data
   const facilities = springPage?.content ?? []
+
+  useEffect(() => {
+    listFacilities({
+      approvalState: ['APPROVED'],
+      search: search || undefined,
+      page,
+      size: pageSize,
+    })
+  }, [search, page])
 
   const [toggleActive] = useToggleFacilityActiveMutation()
 
@@ -35,13 +39,24 @@ export default function FacilitiesListPage() {
     try {
       await toggleActive({ facilityId, active: !currentActive }).unwrap()
       toast.success('Facility status updated.')
+      listFacilities({
+        approvalState: ['APPROVED'],
+        search: search || undefined,
+        page,
+        size: pageSize,
+      })
     } catch {
       toast.error('Failed to update facility status.')
     }
   }
 
   if (isLoading) return <Loader fullPage />
-  if (error) return <ErrorState error="Failed to load facilities." onRetry={refetch} />
+  if (error) return <ErrorState error="Failed to load facilities." onRetry={() => listFacilities({
+    approvalState: ['APPROVED'],
+    search: search || undefined,
+    page,
+    size: pageSize,
+  })} />
 
   return (
     <div>
@@ -71,7 +86,7 @@ export default function FacilitiesListPage() {
                   <tr key={f.id}>
                     <td>{f.name}</td>
                     <td>{f.sportName ?? '—'}</td>
-                    <td>{f.venueName ?? '—'}</td>
+                    <td>{f.locationName ?? '—'}</td>
                     <td><StatusBadge status={f.state.toLowerCase()} /></td>
                     <td><Badge bg={f.active ? 'success' : 'secondary'}>{f.active ? 'Active' : 'Inactive'}</Badge></td>
                     <td>

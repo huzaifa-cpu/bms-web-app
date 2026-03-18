@@ -8,9 +8,9 @@ import { toast } from 'react-toastify'
 import { BsTrash, BsUpload } from 'react-icons/bs'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetProviderQuery, useUpdateProviderMutation } from '../api/providers_api'
+import { useGetProviderMutation, useUpdateProviderMutation } from '../api/providers_api'
 
-import { useListPlansQuery } from '../../subscriptions/api/subscriptions_api'
+import { useListPlansMutation } from '../../subscriptions/api/subscriptions_api'
 
 const schema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -29,13 +29,18 @@ export default function ProviderEditPage() {
   const { providerId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetProviderQuery(Number(providerId))
+  const [getProvider, { data, isLoading, error }] = useGetProviderMutation()
   const provider = data?.data
   const [updateProvider, { isLoading: isSaving }] = useUpdateProviderMutation()
 
   // Fetch active plans
-  const { data: plansData, isLoading: plansLoading } = useListPlansQuery()
+  const [listPlans, { data: plansData, isLoading: plansLoading }] = useListPlansMutation()
   const activePlans = (plansData?.data ?? []).filter(p => p.active)
+
+  useEffect(() => {
+    getProvider(Number(providerId))
+    listPlans(undefined)
+  }, [providerId])
 
   // CNIC image states
   const [cnicFrontFile, setCnicFrontFile] = useState<File | null>(null)
@@ -111,7 +116,7 @@ export default function ProviderEditPage() {
   }
 
   if (isLoading || plansLoading) return <Loader fullPage />
-  if (error || !provider) return <ErrorState error="Provider not found." onRetry={refetch} />
+  if (error || !provider) return <ErrorState error="Provider not found." onRetry={() => getProvider(Number(providerId))} />
 
   const onSubmit = async (formData: FormData) => {
     try {

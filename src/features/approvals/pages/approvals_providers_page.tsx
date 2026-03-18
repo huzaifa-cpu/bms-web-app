@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Badge, Modal, Form } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsEye } from 'react-icons/bs'
@@ -8,18 +8,22 @@ import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Pagination } from '../../../core/ui/components/pagination'
 import { StatusBadge } from '../../../core/ui/components/status_badge'
-import { useListProvidersQuery, useApproveProviderMutation, useRejectProviderMutation } from '../../providers/api/providers_api'
+import { useListProvidersMutation, useApproveProviderMutation, useRejectProviderMutation } from '../../providers/api/providers_api'
 
 export default function ApprovalsProvidersPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const pageSize = 20
 
-  const { data, isLoading, error, refetch } = useListProvidersQuery({
-    approvalStates: ['PENDING', 'REJECTED'],
-    page: page - 1,
-    size: pageSize,
-  })
+  const [listProviders, { data, isLoading, error }] = useListProvidersMutation()
+
+  useEffect(() => {
+    listProviders({
+      approvalStates: ['PENDING', 'REJECTED'],
+      page: page - 1,
+      size: pageSize,
+    })
+  }, [page])
 
   const [_approveProvider, { isLoading: _isApproving }] = useApproveProviderMutation()
   const [rejectProvider, { isLoading: isRejecting }] = useRejectProviderMutation()
@@ -45,7 +49,11 @@ export default function ApprovalsProvidersPage() {
   }
 
   if (isLoading) return <Loader />
-  if (error) return <ErrorState error="Failed to load pending providers." onRetry={refetch} />
+  if (error) return <ErrorState error="Failed to load pending providers." onRetry={() => listProviders({
+    approvalStates: ['PENDING', 'REJECTED'],
+    page: page - 1,
+    size: pageSize,
+  })} />
 
   return (
     <div>
@@ -121,4 +129,3 @@ export default function ApprovalsProvidersPage() {
     </div>
   )
 }
-

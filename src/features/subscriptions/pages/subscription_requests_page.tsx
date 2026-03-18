@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Badge, Form, Row, Col, Spinner } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsPlus, BsEye } from 'react-icons/bs'
@@ -9,7 +9,7 @@ import { ConfirmDialog } from '../../../core/ui/components/confirm_dialog'
 import RbacService from '../../../core/services/rbac_service'
 import StorageService from '../../../core/services/storage_service'
 import { ROUTES } from '../../../core/constants/routes'
-import { useListSubscriptionRequestsQuery, useReviewSubscriptionRequestMutation } from '../api/subscriptions_api'
+import { useListSubscriptionRequestsMutation, useReviewSubscriptionRequestMutation } from '../api/subscriptions_api'
 import type { SubscriptionRequestStatusDto } from '../api/subscriptions_types'
 
 const STATUS_OPTIONS: SubscriptionRequestStatusDto[] = ['PENDING', 'APPROVED', 'REJECTED']
@@ -26,12 +26,16 @@ export default function SubscriptionRequestsPage() {
   const [remarks, setRemarks] = useState('')
   const pageSize = 20
 
-  const { data, isLoading, isError } = useListSubscriptionRequestsQuery({
-    status: statusFilter || undefined,
-    page: page - 1,
-    size: pageSize,
-  })
+  const [listSubscriptionRequests, { data, isLoading, isError }] = useListSubscriptionRequestsMutation()
   const [reviewRequest, { isLoading: isReviewing }] = useReviewSubscriptionRequestMutation()
+
+  useEffect(() => {
+    listSubscriptionRequests({
+      status: statusFilter || undefined,
+      page: page - 1,
+      size: pageSize,
+    })
+  }, [statusFilter, page])
 
   const requests = data?.data?.content ?? []
   const totalPages = data?.data?.totalPages ?? 0
@@ -50,6 +54,11 @@ export default function SubscriptionRequestsPage() {
         },
       }).unwrap()
       toast.success(`Request ${action === 'APPROVE' ? 'approved' : 'rejected'}.`)
+      listSubscriptionRequests({
+        status: statusFilter || undefined,
+        page: page - 1,
+        size: pageSize,
+      })
     } catch (err: unknown) {
       const e = err as { data?: { errorMessage?: string } }
       toast.error(e?.data?.errorMessage || 'Failed to review request.')

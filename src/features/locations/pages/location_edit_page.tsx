@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Form, Button, Row, Col, Dropdown, InputGroup, Spinner } from 'react-bootstrap'
 import { BsArrowLeft, BsSearch } from 'react-icons/bs'
@@ -8,8 +8,8 @@ import { z } from 'zod'
 import { toast } from 'react-toastify'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetLocationQuery, useUpdateLocationMutation } from '../api/locations_api'
-import { useListProvidersQuery } from '../../providers/api/providers_api'
+import { useGetLocationMutation, useUpdateLocationMutation } from '../api/locations_api'
+import { useListProvidersMutation } from '../../providers/api/providers_api'
 
 const PAKISTAN_CITIES = [
   'Karachi', 'Lahore', 'Faisalabad', 'Rawalpindi', 'Multan',
@@ -28,12 +28,20 @@ export default function LocationEditPage() {
   const { locationId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetLocationQuery(Number(locationId))
+  const [getLocation, { data, isLoading, error }] = useGetLocationMutation()
   const location = data?.data
   const [updateLocation, { isLoading: isSaving }] = useUpdateLocationMutation()
 
-  const { data: providersData, isLoading: providersLoading } = useListProvidersQuery({ size: 100, approvalStates: ['APPROVED'] })
+  const [listProviders, { data: providersData, isLoading: providersLoading }] = useListProvidersMutation()
   const providers = providersData?.data?.content ?? []
+
+  useEffect(() => {
+    getLocation(Number(locationId))
+  }, [locationId])
+
+  useEffect(() => {
+    listProviders({ size: 100, approvalStates: ['APPROVED'] })
+  }, [])
 
   const [providerSearch, setProviderSearch] = useState('')
   const [providerDropdownOpen, setProviderDropdownOpen] = useState(false)
@@ -61,7 +69,7 @@ export default function LocationEditPage() {
   const selectedProvider = providers.find(p => p.id === selectedProviderId)
 
   if (isLoading) return <Loader fullPage />
-  if (error || !location) return <ErrorState error="Location not found." onRetry={refetch} />
+  if (error || !location) return <ErrorState error="Location not found." onRetry={() => getLocation(Number(locationId))} />
 
   const onSubmit = async (formData: FormData) => {
     try {

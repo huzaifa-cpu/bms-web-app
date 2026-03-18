@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Form, InputGroup, Row, Col } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsSearch, BsEye, BsPlusCircle } from 'react-icons/bs'
@@ -7,7 +7,7 @@ import { Pagination } from '../../../core/ui/components/pagination'
 import { StatusBadge } from '../../../core/ui/components/status_badge'
 import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
-import { useListBookingsQuery } from '../api/bookings_api'
+import { useListBookingsMutation } from '../api/bookings_api'
 import type { BookingDto } from '../api/bookings_types'
 import { formatDateTime } from '../../../core/utils/date_utils'
 import { formatCurrency } from '../../../core/utils/number_utils'
@@ -24,7 +24,14 @@ export default function BookingsListPage() {
   const pageSize = 10
 
   const queryParams = statusFilter !== 'all' ? { status: statusFilter } : undefined
-  const { data, isLoading, error, refetch } = useListBookingsQuery(queryParams)
+  const [listBookings, { data, isLoading, error }] = useListBookingsMutation()
+
+  const refetch = () => listBookings(queryParams)
+
+  useEffect(() => {
+    listBookings(queryParams)
+  }, [statusFilter])
+
   const bookings = data?.data ?? []
 
   const filtered = bookings.filter((b: BookingDto) => {

@@ -9,25 +9,29 @@ import type {
 
 export const consumersApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    listConsumers: builder.query<GenericResponse<SpringPage<AdminConsumerDto>>, ListConsumersParams | void>({
+    listConsumers: builder.mutation<GenericResponse<SpringPage<AdminConsumerDto>>, ListConsumersParams | void>({
       query: (params) => {
         const searchParams = new URLSearchParams()
         if (params?.status) searchParams.set('status', params.status)
         if (params?.search) searchParams.set('search', params.search)
         searchParams.set('page', String(params?.page ?? 0))
         searchParams.set('size', String(params?.size ?? 20))
-        return `/admin/consumers?${searchParams.toString()}`
+        return {
+          url: `/admin/consumers?${searchParams.toString()}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Consumers'],
     }),
-    getConsumer: builder.query<GenericResponse<AdminConsumerDto>, number>({
-      query: (id) => `/admin/consumers/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Consumers', id }],
+    getConsumer: builder.mutation<GenericResponse<AdminConsumerDto>, number>({
+      query: (id) => ({
+        url: `/admin/consumers/${id}/get`,
+        method: 'POST',
+      }),
     }),
     updateConsumer: builder.mutation<GenericResponse<AdminConsumerDto>, { consumerId: number; request: AdminUpdateConsumerRequest }>({
       query: ({ consumerId, request }) => ({
         url: `/admin/consumers/${consumerId}`,
-        method: 'PUT',
+        method: 'POST',
         body: request,
       }),
       invalidatesTags: ['Consumers'],
@@ -35,7 +39,7 @@ export const consumersApi = apiSlice.injectEndpoints({
     toggleConsumerStatus: builder.mutation<GenericResponse<null>, { consumerId: number; status: string }>({
       query: ({ consumerId, status }) => ({
         url: `/admin/consumers/${consumerId}/status`,
-        method: 'PATCH',
+        method: 'POST',
         body: { status },
       }),
       invalidatesTags: ['Consumers'],
@@ -44,8 +48,8 @@ export const consumersApi = apiSlice.injectEndpoints({
 })
 
 export const {
-  useListConsumersQuery,
-  useGetConsumerQuery,
+  useListConsumersMutation,
+  useGetConsumerMutation,
   useUpdateConsumerMutation,
   useToggleConsumerStatusMutation,
 } = consumersApi

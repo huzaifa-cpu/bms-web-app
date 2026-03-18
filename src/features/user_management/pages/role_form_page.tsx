@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
-import { useGetRoleQuery, useCreateRoleMutation, useUpdateRoleMutation, useGetFeaturesQuery } from '../api/roles_api'
+import { useGetRoleMutation, useCreateRoleMutation, useUpdateRoleMutation, useGetFeaturesMutation } from '../api/roles_api'
 
 const schema = z.object({
   roleName: z.string().min(2, 'Name is required'),
@@ -21,11 +21,19 @@ export default function RoleFormPage() {
   const { roleId } = useParams()
   const isEdit = !!roleId
 
-  const { data, isLoading, error } = useGetRoleQuery(Number(roleId), { skip: !isEdit })
+  const [getRole, { data, isLoading, error }] = useGetRoleMutation()
   const existing = data?.data
 
-  const { data: featuresData, isLoading: featuresLoading } = useGetFeaturesQuery()
+  const [getFeatures, { data: featuresData, isLoading: featuresLoading }] = useGetFeaturesMutation()
   const features = featuresData?.data ?? []
+
+  useEffect(() => {
+    if (isEdit) getRole(Number(roleId))
+  }, [isEdit, roleId, getRole])
+
+  useEffect(() => {
+    getFeatures()
+  }, [getFeatures])
 
   // Build feature actions map and all permissions from API data
   const { featureActions, allPermissions } = useMemo(() => {

@@ -4,11 +4,13 @@ import type { ReportDataDto } from './reports_types'
 
 export const reportsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    generateReport: builder.query<GenericResponse<ReportDataDto>, { reportType: string }>({
-      query: ({ reportType }) => `/admin/reports?reportType=${reportType}`,
-      providesTags: ['Reports'],
+    generateReport: builder.mutation<GenericResponse<ReportDataDto>, { reportType: string }>({
+      query: ({ reportType }) => ({
+        url: `/admin/reports?reportType=${reportType}`,
+        method: 'POST',
+      }),
     }),
   }),
 })
 
-export const { useLazyGenerateReportQuery } = reportsApi
+export const { useGenerateReportMutation } = reportsApi

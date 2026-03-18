@@ -6,7 +6,17 @@
       "Bash(node:*)",
       "Bash(npm run test:*)",
       "Bash(npm run build:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(for file:*)",
+      "Bash(for:*)",
+      "Bash(grep -r \"from.*errors/app_error\\\\|import.*errors/app_error\" D:/business/bms_admin_web/src --include=*.ts --include=*.tsx)",
+      "Read(//d/business/bms_admin_web/**)",
+      "Bash(grep -r \"from.*errors/error_mapper\\\\|import.*errors/error_mapper\" D:/business/bms_admin_web/src --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"from.*dtos/generic_response\\\\|import.*dtos/generic_response\" D:/business/bms_admin_web/src --include=*.ts --include=*.tsx)",
+      "Bash(for enum:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)"
     ]
   }
 }

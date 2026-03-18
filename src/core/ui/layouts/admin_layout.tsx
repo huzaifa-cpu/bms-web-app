@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { Container, Dropdown, Spinner } from 'react-bootstrap'
 import {
@@ -15,7 +15,7 @@ import StorageService from '../../services/storage_service'
 import AuthService from '../../services/auth_service'
 import { ThemeService } from '../theme/theme_service'
 import { useLogoutMutation } from '../../../features/auth/api/auth_api'
-import { useGetProfileQuery } from '../../../features/profile/api/profile_api'
+import { useGetProfileMutation } from '../../../features/profile/api/profile_api'
 import logo from '../../../assets/logo.png'
 
 interface NavItem {
@@ -97,9 +97,11 @@ function canShowItem(item: NavItem): boolean {
 export function AdminLayout() {
   const navigate = useNavigate()
   const user = StorageService.getUser()
-  const { data: profileData } = useGetProfileQuery()
+  const [getProfile, { data: profileData }] = useGetProfileMutation()
   const profile = profileData?.data
   const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  useEffect(() => { getProfile(); }, [])
   const [theme, setTheme] = useState(ThemeService.getTheme())
   const [expanded, setExpanded] = useState<string[]>([])
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation()

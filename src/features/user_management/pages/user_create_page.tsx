@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { BsCamera, BsEye, BsEyeSlash, BsSearch } from 'react-icons/bs'
 import { useCreateUserMutation } from '../api/users_api'
-import { useListRolesQuery } from '../api/roles_api'
+import { useListRolesMutation } from '../api/roles_api'
 
 const schema = z.object({
   username: z.string()
@@ -29,13 +29,17 @@ type FormData = z.infer<typeof schema>
 export default function UserCreatePage() {
   const navigate = useNavigate()
   const [createUser, { isLoading }] = useCreateUserMutation()
-  const { data: rolesData, isLoading: rolesLoading } = useListRolesQuery()
+  const [listRoles, { data: rolesData, isLoading: rolesLoading }] = useListRolesMutation()
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined)
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | undefined>(undefined)
   const [showPassword, setShowPassword] = useState(false)
   const [roleSearch, setRoleSearch] = useState('')
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    listRoles()
+  }, [listRoles])
 
   const roles = rolesData?.data ?? []
   const filteredRoles = useMemo(() => {

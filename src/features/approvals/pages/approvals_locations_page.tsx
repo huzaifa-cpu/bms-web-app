@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Badge, Modal, Form } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsEye } from 'react-icons/bs'
@@ -8,21 +8,25 @@ import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Pagination } from '../../../core/ui/components/pagination'
 import { StatusBadge } from '../../../core/ui/components/status_badge'
-import { useListLocationsQuery, useApproveVenueMutation, useRejectVenueMutation } from '../../locations/api/locations_api'
+import { useListLocationsMutation, useApproveLocationMutation, useRejectLocationMutation } from '../../locations/api/locations_api'
 
 export default function ApprovalsLocationsPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const pageSize = 20
 
-  const { data, isLoading, error, refetch } = useListLocationsQuery({
-    approvalState: ['PENDING', 'REJECTED'],
-    page: page - 1,
-    size: pageSize,
-  })
+  const [listLocations, { data, isLoading, error }] = useListLocationsMutation()
 
-  const [_approveVenue, { isLoading: _isApproving }] = useApproveVenueMutation()
-  const [rejectVenue, { isLoading: isRejecting }] = useRejectVenueMutation()
+  useEffect(() => {
+    listLocations({
+      approvalState: ['PENDING', 'REJECTED'],
+      page: page - 1,
+      size: pageSize,
+    })
+  }, [page])
+
+  const [_approveLocation, { isLoading: _isApproving }] = useApproveLocationMutation()
+  const [rejectLocation, { isLoading: isRejecting }] = useRejectLocationMutation()
 
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [selectedLocationId, _setSelectedLocationId] = useState<number | null>(null)
@@ -36,7 +40,7 @@ export default function ApprovalsLocationsPage() {
   const handleRejectConfirm = async () => {
     if (!selectedLocationId) return
     try {
-      await rejectVenue({ venueId: selectedLocationId, request: { notes: rejectNotes } }).unwrap()
+      await rejectLocation({ locationId: selectedLocationId, request: { notes: rejectNotes } }).unwrap()
       toast.success('Location rejected.')
       setShowRejectModal(false)
     } catch {
@@ -45,7 +49,11 @@ export default function ApprovalsLocationsPage() {
   }
 
   if (isLoading) return <Loader />
-  if (error) return <ErrorState error="Failed to load pending locations." onRetry={refetch} />
+  if (error) return <ErrorState error="Failed to load pending locations." onRetry={() => listLocations({
+    approvalState: ['PENDING', 'REJECTED'],
+    page: page - 1,
+    size: pageSize,
+  })} />
 
   return (
     <div>
@@ -119,4 +127,3 @@ export default function ApprovalsLocationsPage() {
     </div>
   )
 }
-

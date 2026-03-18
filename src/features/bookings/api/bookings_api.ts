@@ -4,19 +4,23 @@ import type { BookingDto, AdminForceCancelRequest, ListBookingsParams, CreateWal
 
 export const bookingsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getBooking: builder.query<GenericResponse<BookingDto>, number>({
-      query: (bookingId) => `/admin/bookings/${bookingId}`,
-      providesTags: (_result, _error, bookingId) => [{ type: 'Bookings', id: bookingId }],
+    getBooking: builder.mutation<GenericResponse<BookingDto>, number>({
+      query: (bookingId) => ({
+        url: `/admin/bookings/${bookingId}`,
+        method: 'POST',
+      }),
     }),
-    listBookings: builder.query<GenericResponse<BookingDto[]>, ListBookingsParams | void>({
+    listBookings: builder.mutation<GenericResponse<BookingDto[]>, ListBookingsParams | void>({
       query: (params) => {
         const searchParams = new URLSearchParams()
         if (params?.status) searchParams.set('status', params.status)
         if (params?.date) searchParams.set('date', params.date)
         const qs = searchParams.toString()
-        return `/admin/bookings${qs ? `?${qs}` : ''}`
+        return {
+          url: `/admin/bookings${qs ? `?${qs}` : ''}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Bookings'],
     }),
     forceCancelBooking: builder.mutation<GenericResponse<BookingDto>, { bookingId: number; request: AdminForceCancelRequest }>({
       query: ({ bookingId, request }) => ({
@@ -38,8 +42,8 @@ export const bookingsApi = apiSlice.injectEndpoints({
 })
 
 export const {
-  useGetBookingQuery,
-  useListBookingsQuery,
+  useGetBookingMutation,
+  useListBookingsMutation,
   useForceCancelBookingMutation,
   useCreateWalkInBookingMutation,
 } = bookingsApi

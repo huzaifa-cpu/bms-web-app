@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Form, Row, Col, Badge } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsEye, BsPlusCircle, BsPencil, BsXCircle, BsCalendarCheck } from 'react-icons/bs'
@@ -8,29 +8,34 @@ import { Loader } from '../../../core/ui/components/loader'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Pagination } from '../../../core/ui/components/pagination'
 import RbacService from '../../../core/services/rbac_service'
-import { useListGamesQuery, useCancelGameMutation } from '../api/socials_api'
+import { useListGamesMutation, useCancelGameMutation } from '../api/socials_api'
 
 export default function GamesListPage() {
   const navigate = useNavigate()
   const canCreate = RbacService.can('GAMES', 'CREATE')
   const canEdit = RbacService.can('GAMES', 'UPDATE')
-  const canCancel = RbacService.can('GAMES', 'DELETE')
+  const canCancel = RbacService.can('GAMES', 'ACTIVE_INACTIVE')
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const pageSize = 20
 
-  const { data, isLoading, error } = useListGamesQuery({
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    page: page - 1,
-    size: pageSize,
-  })
+  const [listGames, { data, isLoading, error }] = useListGamesMutation()
 
   const [cancelGame, { isLoading: isCancelling }] = useCancelGameMutation()
+
+  useEffect(() => {
+    listGames({
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      page: page - 1,
+      size: pageSize,
+    })
+  }, [statusFilter, page, pageSize])
 
   const handleCancelGame = async (gameId: number) => {
     try {
       await cancelGame(gameId).unwrap()
       toast.success('Game cancelled.')
+      listGames({ status: statusFilter !== 'all' ? statusFilter : undefined, page: page - 1, size: pageSize })
     } catch {
       toast.error('Failed to cancel game.')
     }

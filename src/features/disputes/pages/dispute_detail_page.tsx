@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Card, Row, Col, Button, Form, Alert, Modal, Table } from 'react-bootstrap'
 import { BsArrowLeft, BsCheckCircle, BsXCircle } from 'react-icons/bs'
@@ -8,7 +8,7 @@ import { ConfirmDialog } from '../../../core/ui/components/confirm_dialog'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
 import RbacService from '../../../core/services/rbac_service'
-import { useGetDisputeDetailsQuery, useResolveDisputeMutation, useCloseDisputeMutation } from '../api/disputes_api'
+import { useGetDisputeDetailsMutation, useResolveDisputeMutation, useCloseDisputeMutation } from '../api/disputes_api'
 import { formatDateTime } from '../../../core/utils/date_utils'
 import StorageService from '../../../core/services/storage_service'
 import { ROUTES } from '../../../core/constants/routes'
@@ -22,10 +22,7 @@ export default function DisputeDetailPage() {
   const { disputeId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetDisputeDetailsQuery({
-    disputeId: Number(disputeId),
-    adminUserId: getAdminUserId(),
-  })
+  const [getDisputeDetails, { data, isLoading, error }] = useGetDisputeDetailsMutation()
   const [resolveDispute, { isLoading: isResolving }] = useResolveDisputeMutation()
   const [closeDispute, { isLoading: isClosing }] = useCloseDisputeMutation()
 
@@ -35,6 +32,20 @@ export default function DisputeDetailPage() {
 
   const [showCloseModal, setShowCloseModal] = useState(false)
   const [closeNotes, setCloseNotes] = useState('')
+
+  useEffect(() => {
+    getDisputeDetails({
+      disputeId: Number(disputeId),
+      adminUserId: getAdminUserId(),
+    })
+  }, [disputeId])
+
+  const refetch = () => {
+    getDisputeDetails({
+      disputeId: Number(disputeId),
+      adminUserId: getAdminUserId(),
+    })
+  }
 
   if (isLoading) return <Loader fullPage />
   if (error || !data?.data) return <ErrorState error="Dispute not found." onRetry={refetch} />

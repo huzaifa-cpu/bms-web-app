@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Badge, Form, InputGroup, Row, Col } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsSearch, BsEye, BsPlusCircle, BsPencil, BsToggleOn, BsToggleOff } from 'react-icons/bs'
@@ -7,7 +7,7 @@ import { EmptyState } from '../../../core/ui/components/empty_state'
 import { Pagination } from '../../../core/ui/components/pagination'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useListUsersQuery, useToggleUserStatusMutation } from '../api/users_api'
+import { useListUsersMutation, useToggleUserStatusMutation } from '../api/users_api'
 import RbacService from '../../../core/services/rbac_service'
 
 export default function UsersListPage() {
@@ -20,29 +20,44 @@ export default function UsersListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const pageSize = 20
 
-  const { data, isLoading, error, refetch } = useListUsersQuery({
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    search: search || undefined,
-    page,
-    size: pageSize,
-  })
+  const [listUsers, { data, isLoading, error }] = useListUsersMutation()
   const springPage = data?.data
   const users = springPage?.content ?? []
 
   const [toggleStatus] = useToggleUserStatusMutation()
+
+  useEffect(() => {
+    listUsers({
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      search: search || undefined,
+      page,
+      size: pageSize,
+    })
+  }, [listUsers, statusFilter, search, page, pageSize])
 
   const handleToggleStatus = async (userId: number, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
       await toggleStatus({ userId, status: newStatus }).unwrap()
       toast.success('User status updated.')
+      listUsers({
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        search: search || undefined,
+        page,
+        size: pageSize,
+      })
     } catch {
       toast.error('Failed to update user status.')
     }
   }
 
   if (isLoading) return <Loader fullPage />
-  if (error) return <ErrorState error="Failed to load users." onRetry={refetch} />
+  if (error) return <ErrorState error="Failed to load users." onRetry={() => listUsers({
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    search: search || undefined,
+    page,
+    size: pageSize,
+  })} />
 
   return (
     <div>

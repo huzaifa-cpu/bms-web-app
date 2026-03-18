@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Card, Table, Button, Badge } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsPlusCircle, BsPencil, BsToggleOn, BsToggleOff } from 'react-icons/bs'
@@ -7,7 +7,7 @@ import { EmptyState } from '../../../core/ui/components/empty_state'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
 import RbacService from '../../../core/services/rbac_service'
-import { useListPlansQuery, useTogglePlanActiveMutation } from '../api/subscriptions_api'
+import { useListPlansMutation, useTogglePlanActiveMutation } from '../api/subscriptions_api'
 import type { PlanConfigDto } from '../api/subscriptions_types'
 
 const formatPricing = (plan: PlanConfigDto): string => {
@@ -36,22 +36,27 @@ export default function PlansListPage() {
   const canEdit = RbacService.can('SUBSCRIPTIONS_PLANS', 'UPDATE')
   const canToggle = RbacService.can('SUBSCRIPTIONS_PLANS', 'ACTIVE_INACTIVE')
 
-  const { data, isLoading, error, refetch } = useListPlansQuery()
+  const [listPlans, { data, isLoading, error }] = useListPlansMutation()
   const plans = data?.data ?? []
 
   const [toggleActive] = useTogglePlanActiveMutation()
+
+  useEffect(() => {
+    listPlans()
+  }, [])
 
   const handleToggleActive = async (planId: number, currentActive: boolean) => {
     try {
       await toggleActive({ planId, active: !currentActive }).unwrap()
       toast.success('Plan status updated.')
+      listPlans()
     } catch {
       toast.error('Failed to update plan status.')
     }
   }
 
   if (isLoading) return <Loader fullPage />
-  if (error) return <ErrorState error="Failed to load plans." onRetry={refetch} />
+  if (error) return <ErrorState error="Failed to load plans." onRetry={() => listPlans()} />
 
   return (
     <div>

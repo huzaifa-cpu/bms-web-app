@@ -17,15 +17,17 @@ import type {
 
 export const subscriptionsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    listSubscriptions: builder.query<GenericResponse<SubscriptionDto[]>, ListSubscriptionsParams | void>({
+    listSubscriptions: builder.mutation<GenericResponse<SubscriptionDto[]>, ListSubscriptionsParams | void>({
       query: (params) => {
         const searchParams = new URLSearchParams()
         if (params?.status) searchParams.set('status', params.status)
         if (params?.plan) searchParams.set('plan', params.plan)
         const qs = searchParams.toString()
-        return `/admin/subscriptions${qs ? `?${qs}` : ''}`
+        return {
+          url: `/admin/subscriptions${qs ? `?${qs}` : ''}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['ProviderSubscriptions'],
     }),
     assignSubscription: builder.mutation<GenericResponse<SubscriptionDto>, AdminAssignSubscriptionRequest>({
       query: (request) => ({
@@ -36,17 +38,24 @@ export const subscriptionsApi = apiSlice.injectEndpoints({
       invalidatesTags: ['ProviderSubscriptions'],
     }),
     // Plan Metadata
-    getPlanMetadata: builder.query<GenericResponse<PlanMetadataDto>, void>({
-      query: () => '/admin/subscriptions/plans/metadata',
+    getPlanMetadata: builder.mutation<GenericResponse<PlanMetadataDto>, void>({
+      query: () => ({
+        url: '/admin/subscriptions/plans/metadata',
+        method: 'POST',
+      }),
     }),
     // Plan Config CRUD
-    listPlans: builder.query<GenericResponse<PlanConfigDto[]>, void>({
-      query: () => '/admin/subscriptions/plans',
-      providesTags: ['SubscriptionPlans'],
+    listPlans: builder.mutation<GenericResponse<PlanConfigDto[]>, void>({
+      query: () => ({
+        url: '/admin/subscriptions/plans/list',
+        method: 'POST',
+      }),
     }),
-    getPlan: builder.query<GenericResponse<PlanConfigDto>, number>({
-      query: (id) => `/admin/subscriptions/plans/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'SubscriptionPlans', id }],
+    getPlan: builder.mutation<GenericResponse<PlanConfigDto>, number>({
+      query: (id) => ({
+        url: `/admin/subscriptions/plans/${id}/get`,
+        method: 'POST',
+      }),
     }),
     createPlan: builder.mutation<GenericResponse<PlanConfigDto>, CreatePlanConfigRequest>({
       query: (request) => ({
@@ -59,7 +68,7 @@ export const subscriptionsApi = apiSlice.injectEndpoints({
     updatePlan: builder.mutation<GenericResponse<PlanConfigDto>, { planId: number; request: UpdatePlanConfigRequest }>({
       query: ({ planId, request }) => ({
         url: `/admin/subscriptions/plans/${planId}`,
-        method: 'PUT',
+        method: 'POST',
         body: request,
       }),
       invalidatesTags: ['SubscriptionPlans'],
@@ -67,25 +76,29 @@ export const subscriptionsApi = apiSlice.injectEndpoints({
     togglePlanActive: builder.mutation<GenericResponse<null>, { planId: number; active: boolean }>({
       query: ({ planId, active }) => ({
         url: `/admin/subscriptions/plans/${planId}/status`,
-        method: 'PATCH',
+        method: 'POST',
         body: { active },
       }),
       invalidatesTags: ['SubscriptionPlans'],
     }),
     // Subscription Requests
-    listSubscriptionRequests: builder.query<GenericResponse<SpringPage<SubscriptionRequestDto>>, ListSubscriptionRequestsParams | void>({
+    listSubscriptionRequests: builder.mutation<GenericResponse<SpringPage<SubscriptionRequestDto>>, ListSubscriptionRequestsParams | void>({
       query: (params) => {
         const searchParams = new URLSearchParams()
         if (params?.status) searchParams.set('status', params.status)
         searchParams.set('page', String(params?.page ?? 0))
         searchParams.set('size', String(params?.size ?? 20))
-        return `/admin/subscriptions/requests?${searchParams.toString()}`
+        return {
+          url: `/admin/subscriptions/requests/list?${searchParams.toString()}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['SubscriptionRequests'],
     }),
-    getSubscriptionRequest: builder.query<GenericResponse<SubscriptionRequestDto>, number>({
-      query: (id) => `/admin/subscriptions/requests/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'SubscriptionRequests', id }],
+    getSubscriptionRequest: builder.mutation<GenericResponse<SubscriptionRequestDto>, number>({
+      query: (id) => ({
+        url: `/admin/subscriptions/requests/${id}`,
+        method: 'POST',
+      }),
     }),
     createSubscriptionRequest: builder.mutation<GenericResponse<SubscriptionRequestDto>, CreateSubscriptionRequestRequest>({
       query: (request) => ({
@@ -107,16 +120,16 @@ export const subscriptionsApi = apiSlice.injectEndpoints({
 })
 
 export const {
-  useListSubscriptionsQuery,
+  useListSubscriptionsMutation,
   useAssignSubscriptionMutation,
-  useGetPlanMetadataQuery,
-  useListPlansQuery,
-  useGetPlanQuery,
+  useGetPlanMetadataMutation,
+  useListPlansMutation,
+  useGetPlanMutation,
   useCreatePlanMutation,
   useUpdatePlanMutation,
   useTogglePlanActiveMutation,
-  useListSubscriptionRequestsQuery,
-  useGetSubscriptionRequestQuery,
+  useListSubscriptionRequestsMutation,
+  useGetSubscriptionRequestMutation,
   useCreateSubscriptionRequestMutation,
   useReviewSubscriptionRequestMutation,
 } = subscriptionsApi

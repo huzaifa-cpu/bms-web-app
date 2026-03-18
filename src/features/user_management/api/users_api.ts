@@ -10,20 +10,24 @@ import type {
 
 export const usersApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    listUsers: builder.query<GenericResponse<SpringPage<AdminUserDto>>, ListUsersParams | void>({
+    listUsers: builder.mutation<GenericResponse<SpringPage<AdminUserDto>>, ListUsersParams | void>({
       query: (params) => {
         const searchParams = new URLSearchParams()
         if (params?.status) searchParams.set('status', params.status)
         if (params?.search) searchParams.set('search', params.search)
         searchParams.set('page', String(params?.page ?? 0))
         searchParams.set('size', String(params?.size ?? 20))
-        return `/admin/users?${searchParams.toString()}`
+        return {
+          url: `/admin/users?${searchParams.toString()}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Users'],
     }),
-    getUser: builder.query<GenericResponse<AdminUserDto>, number>({
-      query: (id) => `/admin/users/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Users', id }],
+    getUser: builder.mutation<GenericResponse<AdminUserDto>, number>({
+      query: (id) => ({
+        url: `/admin/users/${id}/get`,
+        method: 'POST',
+      }),
     }),
     createUser: builder.mutation<GenericResponse<AdminUserDto>, CreateUserPayload>({
       query: (payload) => {
@@ -50,7 +54,7 @@ export const usersApi = apiSlice.injectEndpoints({
         }
         return {
           url: `/admin/users/${payload.userId}`,
-          method: 'PUT',
+          method: 'POST',
           body: formData,
           headers: {},
         }
@@ -60,7 +64,7 @@ export const usersApi = apiSlice.injectEndpoints({
     toggleUserStatus: builder.mutation<GenericResponse<null>, { userId: number; status: string }>({
       query: ({ userId, status }) => ({
         url: `/admin/users/${userId}/status`,
-        method: 'PATCH',
+        method: 'POST',
         body: { status },
       }),
       invalidatesTags: ['Users'],
@@ -69,8 +73,8 @@ export const usersApi = apiSlice.injectEndpoints({
 })
 
 export const {
-  useListUsersQuery,
-  useGetUserQuery,
+  useListUsersMutation,
+  useGetUserMutation,
   useCreateUserMutation,
   useUpdateUserMutation,
   useToggleUserStatusMutation,

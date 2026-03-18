@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetConsumerQuery, useUpdateConsumerMutation } from '../api/consumers_api'
+import { useGetConsumerMutation, useUpdateConsumerMutation } from '../api/consumers_api'
 
 const schema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -20,9 +20,15 @@ export default function ConsumerEditPage() {
   const { consumerId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetConsumerQuery(Number(consumerId))
+  const [getConsumer, { data, isLoading, error }] = useGetConsumerMutation()
   const consumer = data?.data
   const [updateConsumer, { isLoading: isSaving }] = useUpdateConsumerMutation()
+
+  useEffect(() => {
+    getConsumer(Number(consumerId))
+  }, [consumerId])
+
+  const refetch = () => getConsumer(Number(consumerId))
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
     resolver: zodResolver(schema),

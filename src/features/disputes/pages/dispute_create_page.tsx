@@ -4,9 +4,9 @@ import { useNavigate } from 'react-router-dom'
 import { BsSearch, BsArrowLeft, BsChevronDown } from 'react-icons/bs'
 import { toast } from 'react-toastify'
 import { ROUTES } from '../../../core/constants/routes'
-import { useListConsumersQuery } from '../../consumers/api/consumers_api'
-import { useListLocationsQuery } from '../../locations/api/locations_api'
-import { useListFacilitiesByVenueQuery } from '../../facilities/api/facilities_api'
+import { useListConsumersMutation } from '../../consumers/api/consumers_api'
+import { useListLocationsMutation } from '../../locations/api/locations_api'
+import { useListFacilitiesByLocationMutation } from '../../facilities/api/facilities_api'
 import { useCreateDisputeMutation } from '../api/disputes_api'
 import type { DisputeTypeDto } from '../api/disputes_types'
 
@@ -49,17 +49,32 @@ export default function DisputeCreatePage() {
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
 
-  // API queries
-  const { data: raisedByConsumersData } = useListConsumersQuery({ search: raisedBySearch, page: 0, size: 10 })
-  const { data: locationsData } = useListLocationsQuery({ search: locationSearch, page: 0, size: 50, approvalState: ['APPROVED'] })
-  const { data: facilitiesData } = useListFacilitiesByVenueQuery(selectedLocationId!, {
-    skip: !selectedLocationId,
-  })
+  // API mutations
+  const [listConsumers, { data: raisedByConsumersData }] = useListConsumersMutation()
+  const [listLocations, { data: locationsData }] = useListLocationsMutation()
+  const [listFacilitiesByLocation, { data: facilitiesData }] = useListFacilitiesByLocationMutation()
   const [createDispute, { isLoading: isSubmitting }] = useCreateDisputeMutation()
 
   const raisedByConsumers = raisedByConsumersData?.data?.content ?? []
   const locations = locationsData?.data?.content ?? []
   const facilities = facilitiesData?.data ?? []
+
+  // Fetch consumers when search changes
+  useEffect(() => {
+    listConsumers({ search: raisedBySearch, page: 0, size: 10 })
+  }, [raisedBySearch])
+
+  // Fetch locations when search changes
+  useEffect(() => {
+    listLocations({ search: locationSearch, page: 0, size: 50, approvalState: ['APPROVED'] })
+  }, [locationSearch])
+
+  // Fetch facilities when location changes
+  useEffect(() => {
+    if (selectedLocationId) {
+      listFacilitiesByLocation(selectedLocationId)
+    }
+  }, [selectedLocationId])
 
   // Close dropdowns on outside click
   useEffect(() => {

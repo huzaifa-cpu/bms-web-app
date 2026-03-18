@@ -10,16 +10,23 @@ import type {
 
 export const rolesApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    listRoles: builder.query<GenericResponse<AdminRoleDto[]>, void>({
-      query: () => '/admin/roles',
-      providesTags: ['Roles'],
+    listRoles: builder.mutation<GenericResponse<AdminRoleDto[]>, void>({
+      query: () => ({
+        url: '/admin/roles/list',
+        method: 'POST',
+      }),
     }),
-    getRole: builder.query<GenericResponse<AdminRoleDto>, number>({
-      query: (id) => `/admin/roles/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Roles', id }],
+    getRole: builder.mutation<GenericResponse<AdminRoleDto>, number>({
+      query: (id) => ({
+        url: `/admin/roles/${id}/get`,
+        method: 'POST',
+      }),
     }),
-    getFeatures: builder.query<GenericResponse<FeaturePermissionsDto[]>, void>({
-      query: () => '/admin/roles/features',
+    getFeatures: builder.mutation<GenericResponse<FeaturePermissionsDto[]>, void>({
+      query: () => ({
+        url: '/admin/roles/features',
+        method: 'POST',
+      }),
     }),
     createRole: builder.mutation<GenericResponse<AdminRoleDto>, CreateRoleRequest>({
       query: (request) => ({
@@ -32,7 +39,7 @@ export const rolesApi = apiSlice.injectEndpoints({
     updateRole: builder.mutation<GenericResponse<AdminRoleDto>, { roleId: number; request: UpdateRoleRequest }>({
       query: ({ roleId, request }) => ({
         url: `/admin/roles/${roleId}`,
-        method: 'PUT',
+        method: 'POST',
         body: request,
       }),
       invalidatesTags: ['Roles'],
@@ -40,7 +47,7 @@ export const rolesApi = apiSlice.injectEndpoints({
     toggleRoleStatus: builder.mutation<GenericResponse<null>, { roleId: number; status: RoleStatus }>({
       query: ({ roleId, status }) => ({
         url: `/admin/roles/${roleId}/status`,
-        method: 'PATCH',
+        method: 'POST',
         body: { status },
       }),
       invalidatesTags: ['Roles'],
@@ -49,9 +56,9 @@ export const rolesApi = apiSlice.injectEndpoints({
 })
 
 export const {
-  useListRolesQuery,
-  useGetRoleQuery,
-  useGetFeaturesQuery,
+  useListRolesMutation,
+  useGetRoleMutation,
+  useGetFeaturesMutation,
   useCreateRoleMutation,
   useUpdateRoleMutation,
   useToggleRoleStatusMutation,

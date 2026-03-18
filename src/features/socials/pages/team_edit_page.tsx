@@ -8,9 +8,9 @@ import { toast } from 'react-toastify'
 import { BsCamera, BsSearch, BsX, BsCheckCircleFill } from 'react-icons/bs'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useListSportsQuery } from '../../facilities/api/facilities_api'
-import { useListConsumersQuery } from '../../consumers/api/consumers_api'
-import { useGetTeamQuery, useUpdateTeamMutation } from '../api/socials_api'
+import { useListSportsMutation } from '../../facilities/api/facilities_api'
+import { useListConsumersMutation } from '../../consumers/api/consumers_api'
+import { useGetTeamMutation, useUpdateTeamMutation } from '../api/socials_api'
 
 const schema = z.object({
   name: z.string().min(2, 'Team name is required'),
@@ -26,7 +26,7 @@ export default function TeamEditPage() {
   const navigate = useNavigate()
 
   // Fetch team data
-  const { data: teamData, isLoading: teamLoading, error: teamError, refetch } = useGetTeamQuery(Number(teamId))
+  const [getTeam, { data: teamData, isLoading: teamLoading, error: teamError }] = useGetTeamMutation()
   const team = teamData?.data
 
   // Image state
@@ -43,17 +43,31 @@ export default function TeamEditPage() {
   const [members, setMembers] = useState<Member[]>([])
   const [showSearchResults, setShowSearchResults] = useState(false)
 
-  // API queries
-  const { data: sportsData, isLoading: sportsLoading } = useListSportsQuery()
+  // API mutations
+  const [listSports, { data: sportsData, isLoading: sportsLoading }] = useListSportsMutation()
   const sports = sportsData?.data ?? []
 
-  const { data: consumersData, isLoading: consumersLoading } = useListConsumersQuery(
-    { search: memberSearch, size: 10 },
-    { skip: memberSearch.length < 3 }
-  )
+  const [listConsumers, { data: consumersData, isLoading: consumersLoading }] = useListConsumersMutation()
   const consumers = consumersData?.data?.content ?? []
 
   const [updateTeam, { isLoading: isUpdating }] = useUpdateTeamMutation()
+
+  // Fetch team on mount
+  useEffect(() => {
+    getTeam(Number(teamId))
+  }, [teamId])
+
+  // Fetch sports on mount
+  useEffect(() => {
+    listSports()
+  }, [])
+
+  // Fetch consumers when search changes
+  useEffect(() => {
+    if (memberSearch.length >= 3) {
+      listConsumers({ search: memberSearch, size: 10 })
+    }
+  }, [memberSearch])
 
   const { register, handleSubmit, formState: { errors }, control, setValue, watch, reset } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -161,7 +175,7 @@ export default function TeamEditPage() {
   }
 
   if (teamLoading) return <Loader fullPage />
-  if (teamError || !team) return <ErrorState error="Team not found." onRetry={refetch} />
+  if (teamError || !team) return <ErrorState error="Team not found." onRetry={() => getTeam(Number(teamId))} />
 
   return (
     <div>
@@ -335,4 +349,3 @@ export default function TeamEditPage() {
     </div>
   )
 }
-

@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { BsSearch, BsArrowLeft, BsChevronDown, BsCheck2 } from 'react-icons/bs'
 import { toast } from 'react-toastify'
 import { ROUTES } from '../../../core/constants/routes'
-import { useListProvidersQuery } from '../../providers/api/providers_api'
-import { useListPlansQuery, useCreateSubscriptionRequestMutation } from '../api/subscriptions_api'
+import { useListProvidersMutation } from '../../providers/api/providers_api'
+import { useListPlansMutation, useCreateSubscriptionRequestMutation } from '../api/subscriptions_api'
 import type { PlanConfigDto } from '../api/subscriptions_types'
 
 export default function CreateSubscriptionRequestPage() {
@@ -24,15 +24,23 @@ export default function CreateSubscriptionRequestPage() {
   // Notes
   const [adminNotes, setAdminNotes] = useState('')
 
-  // API queries
-  const { data: providersData, isLoading: isLoadingProviders } = useListProvidersQuery({
-    search: providerSearch,
-    page: 0,
-    size: 10,
-    approvalStates: ['APPROVED'],
-  })
-  const { data: plansData, isLoading: isLoadingPlans } = useListPlansQuery()
+  // API mutations
+  const [listProviders, { data: providersData, isLoading: isLoadingProviders }] = useListProvidersMutation()
+  const [listPlans, { data: plansData, isLoading: isLoadingPlans }] = useListPlansMutation()
   const [createRequest, { isLoading: isSubmitting }] = useCreateSubscriptionRequestMutation()
+
+  useEffect(() => {
+    listProviders({
+      search: providerSearch,
+      page: 0,
+      size: 10,
+      approvalStates: ['APPROVED'],
+    })
+  }, [providerSearch])
+
+  useEffect(() => {
+    listPlans()
+  }, [])
 
   const providers = providersData?.data?.content ?? []
   const plans: PlanConfigDto[] = plansData?.data?.filter(p => p.active) ?? []
@@ -250,4 +258,3 @@ export default function CreateSubscriptionRequestPage() {
     </div>
   )
 }
-

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Table, Button, Badge, Form, InputGroup, Row, Col } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { BsSearch, BsEye, BsPencil, BsToggleOn, BsToggleOff, BsPlusCircle } from 'react-icons/bs'
@@ -8,7 +8,7 @@ import { Pagination } from '../../../core/ui/components/pagination'
 import { StatusBadge } from '../../../core/ui/components/status_badge'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useListLocationsQuery, useToggleLocationActiveMutation } from '../api/locations_api'
+import { useListLocationsMutation, useToggleLocationActiveMutation } from '../api/locations_api'
 import RbacService from '../../../core/services/rbac_service'
 
 export default function LocationsListPage() {
@@ -20,12 +20,17 @@ export default function LocationsListPage() {
   const [page, setPage] = useState(0)
   const pageSize = 20
 
-  const { data, isLoading, error, refetch } = useListLocationsQuery({
-    approvalState: ['APPROVED'],
-    search: search || undefined,
-    page,
-    size: pageSize,
-  })
+  const [listLocations, { data, isLoading, error }] = useListLocationsMutation()
+
+  useEffect(() => {
+    listLocations({
+      approvalState: ['APPROVED'],
+      search: search || undefined,
+      page,
+      size: pageSize,
+    })
+  }, [search, page])
+
   const springPage = data?.data
   const locations = springPage?.content ?? []
 
@@ -35,13 +40,24 @@ export default function LocationsListPage() {
     try {
       await toggleActive({ locationId, active: !currentActive }).unwrap()
       toast.success('Location status updated.')
+      listLocations({
+        approvalState: ['APPROVED'],
+        search: search || undefined,
+        page,
+        size: pageSize,
+      })
     } catch {
       toast.error('Failed to update location status.')
     }
   }
 
   if (isLoading) return <Loader fullPage />
-  if (error) return <ErrorState error="Failed to load locations." onRetry={refetch} />
+  if (error) return <ErrorState error="Failed to load locations." onRetry={() => listLocations({
+    approvalState: ['APPROVED'],
+    search: search || undefined,
+    page,
+    size: pageSize,
+  })} />
 
   return (
     <div>

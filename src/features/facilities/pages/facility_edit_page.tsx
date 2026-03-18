@@ -8,9 +8,9 @@ import { z } from 'zod'
 import { toast } from 'react-toastify'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetFacilityQuery, useUpdateFacilityMutation, useListSportsQuery } from '../api/facilities_api'
-import { useListProvidersQuery } from '../../providers/api/providers_api'
-import { useListLocationsByProviderQuery } from '../../locations/api/locations_api'
+import { useGetFacilityMutation, useUpdateFacilityMutation, useListSportsMutation } from '../api/facilities_api'
+import { useListProvidersMutation } from '../../providers/api/providers_api'
+import { useListLocationsByProviderMutation } from '../../locations/api/locations_api'
 import type { FacilityScheduleDto } from '../api/facilities_types'
 
 const DAYS_OF_WEEK = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
@@ -25,7 +25,7 @@ const scheduleSchema = z.object({
 
 const schema = z.object({
   providerUserId: z.number().min(1, 'Provider is required'),
-  venueId: z.number().min(1, 'Location is required'),
+  locationId: z.number().min(1, 'Location is required'),
   sportId: z.number().min(1, 'Sport is required'),
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
@@ -45,8 +45,12 @@ export default function FacilityEditPage() {
   const { facilityId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetFacilityQuery(Number(facilityId))
+  const [getFacility, { data, isLoading, error }] = useGetFacilityMutation()
   const facility = data?.data
+
+  useEffect(() => {
+    if (facilityId) getFacility(Number(facilityId))
+  }, [facilityId])
 
   const [updateFacility, { isLoading: isSaving }] = useUpdateFacilityMutation()
 
@@ -65,18 +69,26 @@ export default function FacilityEditPage() {
   const [sportDropdownOpen, setSportDropdownOpen] = useState(false)
   const [sportSearch, setSportSearch] = useState('')
 
-  // API queries
-  const { data: providersData, isLoading: providersLoading } = useListProvidersQuery({ size: 100, approvalStates: ['APPROVED'] })
+  // API mutations
+  const [listProviders, { data: providersData, isLoading: providersLoading }] = useListProvidersMutation()
   const providers = providersData?.data?.content ?? []
 
-  const { data: sportsData, isLoading: sportsLoading } = useListSportsQuery()
+  const [listSports, { data: sportsData, isLoading: sportsLoading }] = useListSportsMutation()
   const sports = sportsData?.data ?? []
+
+  useEffect(() => {
+    listProviders({ size: 100, approvalStates: ['APPROVED'] })
+  }, [])
+
+  useEffect(() => {
+    listSports(undefined)
+  }, [])
 
   const { register, handleSubmit, formState: { errors }, control, setValue, watch, reset } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       providerUserId: 0,
-      venueId: 0,
+      locationId: 0,
       sportId: 0,
       name: '',
       description: '',
@@ -89,7 +101,7 @@ export default function FacilityEditPage() {
     if (facility) {
       reset({
         providerUserId: facility.providerUserId ?? 0,
-        venueId: facility.venueId ?? 0,
+        locationId: facility.locationId ?? 0,
         sportId: facility.sportId ?? 0,
         name: facility.name,
         description: facility.description ?? '',
@@ -103,13 +115,17 @@ export default function FacilityEditPage() {
   const selectedProvider = providers.find(p => p.id === selectedProviderId)
 
   // Fetch locations for selected provider
-  const { data: locationsData, isLoading: locationsLoading } = useListLocationsByProviderQuery(selectedProviderId, {
-    skip: !selectedProviderId || selectedProviderId === 0,
-  })
+  const [listLocationsByProvider, { data: locationsData, isLoading: locationsLoading }] = useListLocationsByProviderMutation()
   const locations = locationsData?.data ?? []
 
-  const selectedVenueId = watch('venueId')
-  const selectedLocation = locations.find(l => l.id === selectedVenueId)
+  useEffect(() => {
+    if (selectedProviderId && selectedProviderId !== 0) {
+      listLocationsByProvider(selectedProviderId)
+    }
+  }, [selectedProviderId])
+
+  const selectedLocationId = watch('locationId')
+  const selectedLocation = locations.find(l => l.id === selectedLocationId)
 
   const selectedSportId = watch('sportId')
   const selectedSport = sports.find(s => s.id === selectedSportId)
@@ -171,7 +187,7 @@ export default function FacilityEditPage() {
   }
 
   if (isLoading) return <Loader fullPage />
-  if (error || !facility) return <ErrorState error="Facility not found." onRetry={refetch} />
+  if (error || !facility) return <ErrorState error="Facility not found." onRetry={() => getFacility(Number(facilityId))} />
 
   const totalImages = existingImageUrls.length + newImages.length
 
@@ -186,7 +202,7 @@ export default function FacilityEditPage() {
         facilityId: Number(facilityId),
         request: {
           providerUserId: formData.providerUserId,
-          venueId: formData.venueId,
+          locationId: formData.locationId,
           sportId: formData.sportId,
           name: formData.name,
           description: formData.description,
@@ -287,7 +303,7 @@ export default function FacilityEditPage() {
                             </InputGroup>
                           </div>
                           {filteredProviders.map(p => (
-                            <Dropdown.Item key={p.id} active={field.value === p.id} onClick={() => { setValue('providerUserId', p.id); setValue('venueId', 0); setProviderDropdownOpen(false); setProviderSearch(''); }}>
+                            <Dropdown.Item key={p.id} active={field.value === p.id} onClick={() => { setValue('providerUserId', p.id); setValue('locationId', 0); setProviderDropdownOpen(false); setProviderSearch(''); }}>
                               {p.businessName || p.name}
                             </Dropdown.Item>
                           ))}
@@ -304,12 +320,12 @@ export default function FacilityEditPage() {
                 <Form.Group>
                   <Form.Label>Location <span className="text-danger">*</span></Form.Label>
                   <Controller
-                    name="venueId"
+                    name="locationId"
                     control={control}
                     render={({ field }) => (
                       <Dropdown show={locationDropdownOpen} onToggle={setLocationDropdownOpen}>
-                        <Dropdown.Toggle variant={errors.venueId ? 'outline-danger' : 'outline-secondary'} className="w-100 text-start" disabled={!selectedProviderId || locationsLoading}>
-                          {locationsLoading ? <Spinner animation="border" size="sm" /> : selectedLocation ? selectedLocation.name : (facility.venueName ?? 'Select location...')}
+                        <Dropdown.Toggle variant={errors.locationId ? 'outline-danger' : 'outline-secondary'} className="w-100 text-start" disabled={!selectedProviderId || locationsLoading}>
+                          {locationsLoading ? <Spinner animation="border" size="sm" /> : selectedLocation ? selectedLocation.name : (facility.locationName ?? 'Select location...')}
                         </Dropdown.Toggle>
                         <Dropdown.Menu className="w-100" style={{ maxHeight: 250, overflowY: 'auto' }}>
                           <div className="px-2 pb-2">
@@ -321,7 +337,7 @@ export default function FacilityEditPage() {
                           {filteredLocations.length === 0 ? (
                             <Dropdown.ItemText className="text-muted">No locations found</Dropdown.ItemText>
                           ) : filteredLocations.map(l => (
-                            <Dropdown.Item key={l.id} active={field.value === l.id} onClick={() => { setValue('venueId', l.id); setLocationDropdownOpen(false); setLocationSearch(''); }}>
+                            <Dropdown.Item key={l.id} active={field.value === l.id} onClick={() => { setValue('locationId', l.id); setLocationDropdownOpen(false); setLocationSearch(''); }}>
                               {l.name}
                             </Dropdown.Item>
                           ))}
@@ -329,7 +345,7 @@ export default function FacilityEditPage() {
                       </Dropdown>
                     )}
                   />
-                  {errors.venueId && <div className="text-danger small mt-1">{errors.venueId.message}</div>}
+                  {errors.locationId && <div className="text-danger small mt-1">{errors.locationId.message}</div>}
                 </Form.Group>
               </Col>
 

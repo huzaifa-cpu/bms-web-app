@@ -13,24 +13,28 @@ import type {
 
 export const disputesApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    listDisputes: builder.query<GenericResponse<DisputeDto[]>, ListDisputesParams | void>({
+    listDisputes: builder.mutation<GenericResponse<DisputeDto[]>, ListDisputesParams | void>({
       query: (params) => {
         const searchParams = new URLSearchParams()
         if (params?.status) searchParams.set('status', params.status)
         if (params?.type) searchParams.set('type', params.type)
         if (params?.assignedTo) searchParams.set('assignedTo', String(params.assignedTo))
         const qs = searchParams.toString()
-        return `/admin/disputes${qs ? `?${qs}` : ''}`
+        return {
+          url: `/admin/disputes${qs ? `?${qs}` : ''}`,
+          method: 'POST',
+        }
       },
-      providesTags: ['Disputes'],
     }),
-    getDisputeDetails: builder.query<GenericResponse<DisputeDetailsDto>, { disputeId: number; adminUserId: number }>({
-      query: ({ disputeId, adminUserId }) => `/admin/disputes/${disputeId}?adminUserId=${adminUserId}`,
-      providesTags: (_result, _error, { disputeId }) => [{ type: 'Disputes', id: disputeId }],
+    getDisputeDetails: builder.mutation<GenericResponse<DisputeDetailsDto>, { disputeId: number; adminUserId: number }>({
+      query: ({ disputeId, adminUserId }) => ({
+        url: `/admin/disputes/${disputeId}?adminUserId=${adminUserId}`,
+        method: 'POST',
+      }),
     }),
     createDispute: builder.mutation<GenericResponse<DisputeDto>, CreateDisputeRequest>({
       query: (request) => ({
-        url: `/consumer/disputes`,
+        url: `/admin/disputes/create`,
         method: 'POST',
         body: request,
       }),
@@ -72,8 +76,8 @@ export const disputesApi = apiSlice.injectEndpoints({
 })
 
 export const {
-  useListDisputesQuery,
-  useGetDisputeDetailsQuery,
+  useListDisputesMutation,
+  useGetDisputeDetailsMutation,
   useCreateDisputeMutation,
   useAssignDisputeMutation,
   useUpdateDisputeStatusMutation,

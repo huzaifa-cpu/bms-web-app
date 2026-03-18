@@ -9,12 +9,14 @@ interface GenericResponse<T> {
 
 export const dashboardApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getDashboardStats: builder.query<DashboardStatsDto, void>({
-      query: () => '/admin/dashboard/stats',
+    getDashboardStats: builder.mutation<DashboardStatsDto, void>({
+      query: () => ({
+        url: '/admin/dashboard/stats',
+        method: 'POST',
+      }),
       transformResponse: (response: GenericResponse<DashboardStatsDto>) => response.data,
-      providesTags: ['Dashboard'],
     }),
   }),
 })
 
-export const { useGetDashboardStatsQuery } = dashboardApi
+export const { useGetDashboardStatsMutation } = dashboardApi

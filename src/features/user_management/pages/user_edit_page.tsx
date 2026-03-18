@@ -8,8 +8,8 @@ import { toast } from 'react-toastify'
 import { BsCamera, BsSearch } from 'react-icons/bs'
 import { ErrorState } from '../../../core/ui/components/error_state'
 import { Loader } from '../../../core/ui/components/loader'
-import { useGetUserQuery, useUpdateUserMutation } from '../api/users_api'
-import { useListRolesQuery } from '../api/roles_api'
+import { useGetUserMutation, useUpdateUserMutation } from '../api/users_api'
+import { useListRolesMutation } from '../api/roles_api'
 
 const schema = z.object({
   username: z.string()
@@ -31,12 +31,20 @@ export default function UserEditPage() {
   const { userId } = useParams()
   const navigate = useNavigate()
 
-  const { data, isLoading, error, refetch } = useGetUserQuery(Number(userId))
-  const { data: rolesData, isLoading: rolesLoading } = useListRolesQuery()
+  const [getUser, { data, isLoading, error }] = useGetUserMutation()
+  const [listRoles, { data: rolesData, isLoading: rolesLoading }] = useListRolesMutation()
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation()
 
   const user = data?.data
   const roles = rolesData?.data ?? []
+
+  useEffect(() => {
+    getUser(Number(userId))
+  }, [getUser, userId])
+
+  useEffect(() => {
+    listRoles()
+  }, [listRoles])
 
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined)
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | undefined>(undefined)
@@ -121,7 +129,7 @@ export default function UserEditPage() {
   }
 
   if (isLoading) return <Loader fullPage />
-  if (error || !user) return <ErrorState error="User not found." onRetry={refetch} />
+  if (error || !user) return <ErrorState error="User not found." onRetry={() => getUser(Number(userId))} />
 
   return (
     <div style={{ maxWidth: 500 }}>
